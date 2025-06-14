@@ -122,10 +122,17 @@ body {
   padding: 18px 24px;
   background: var(--background-secondary);
   border-bottom: 1px solid var(--border);
+  position: relative;
 }
 .chat-header h2 {
   font-size: 1.3rem;
   font-weight: 600;
+}
+.chat-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  position: relative;
 }
 .chat-actions button {
   background: none;
@@ -1839,4 +1846,89 @@ body {
 .dm-message-animate-in {
   /* This class is used to trigger the entry animation for new message bubbles. */
   /* The animation is set by the .dm-message-bubble and .dm-message.mine .dm-message-bubble selectors. */
+}
+
+.search-bar-container {
+  position: absolute;
+  right: 0;
+  top: 50%;
+  transform: translateY(-50%) scaleX(0.7);
+  opacity: 0;
+  width: 0;
+  background: var(--background-tertiary);
+  box-shadow: 0 4px 24px var(--shadow), 0 0 0 2px var(--accent);
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 10px;
+  height: 40px;
+  z-index: 20;
+  pointer-events: none;
+  transition: width 0.35s cubic-bezier(.4,0,.2,1), opacity 0.25s, transform 0.35s cubic-bezier(.4,0,.2,1);
+}
+.search-bar-container.active {
+  opacity: 1;
+  width: 320px;
+  transform: translateY(-50%) scaleX(1);
+  pointer-events: auto;
+}
+@media (max-width: 600px) {
+  .search-bar-container.active {
+    width: 98vw;
+    left: 0;
+    right: 0;
+    border-radius: 0 0 12px 12px;
+  }
+}
+.search-bar-input {
+  flex: 1;
+  background: var(--background);
+  color: var(--text);
+  border: 1.5px solid var(--border);
+  border-radius: 8px;
+  padding: 8px 12px;
+  font-size: 1rem;
+  outline: none;
+  transition: border 0.2s, box-shadow 0.2s;
+  min-width: 0;
+}
+.search-bar-input:focus {
+  border: 1.5px solid var(--accent);
+  box-shadow: 0 0 0 2px var(--accent);
+}
+.search-bar-arrow, .search-bar-close {
+  background: none;
+  border: none;
+  color: var(--accent);
+  border-radius: 50%;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.1rem;
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s, box-shadow 0.2s;
+  margin-left: 0;
+  margin-right: 0;
+  box-shadow: none;
+}
+.search-bar-arrow:hover, .search-bar-close:hover {
+  background: var(--accent);
+  color: var(--text);
+}
+
+.search-highlight {
+  background: linear-gradient(90deg, var(--accent) 10%, transparent 100%) !important;
+  box-shadow: 0 2px 12px var(--accent), 0 0 0 2px var(--accent);
+  border-radius: 14px !important;
+  transition: background 0.22s, box-shadow 0.22s;
+  position: relative;
+  z-index: 2;
+}
+.search-highlight-active {
+  box-shadow: 0 0 0 3px var(--accent-hover), 0 2px 16px var(--accent);
+  background: linear-gradient(90deg, var(--accent-hover) 20%, transparent 100%) !important;
+  border-radius: 16px !important;
 } 

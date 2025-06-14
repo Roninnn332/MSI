@@ -1117,4 +1117,86 @@ document.addEventListener('DOMContentLoaded', function() {
       input.focus();
     });
   }
+
+  // --- Premium Chat Search Logic ---
+  const searchBtn = document.querySelector('.search-btn');
+  const searchBar = document.querySelector('.search-bar-container');
+  const searchInput = document.querySelector('.search-bar-input');
+  const searchClose = document.querySelector('.search-bar-close');
+  const arrowUp = document.querySelector('.search-bar-arrow-up');
+  const arrowDown = document.querySelector('.search-bar-arrow-down');
+  let matches = [];
+  let currentMatch = 0;
+
+  function clearHighlights() {
+    document.querySelectorAll('.search-highlight').forEach(el => {
+      el.classList.remove('search-highlight');
+    });
+  }
+
+  function updateHighlights(query) {
+    clearHighlights();
+    matches = [];
+    if (!query) return;
+    const bubbles = document.querySelectorAll('.dm-message-bubble');
+    bubbles.forEach((bubble, idx) => {
+      const text = bubble.textContent || '';
+      if (text.toLowerCase().includes(query.toLowerCase())) {
+        bubble.classList.add('search-highlight');
+        matches.push(bubble);
+      }
+    });
+    if (matches.length > 0) {
+      currentMatch = 0;
+      scrollToMatch(currentMatch);
+    }
+  }
+
+  function scrollToMatch(idx) {
+    if (!matches.length) return;
+    matches.forEach((el, i) => {
+      el.classList.toggle('search-highlight-active', i === idx);
+    });
+    const el = matches[idx];
+    if (el) {
+      el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+  }
+
+  if (searchBtn && searchBar && searchInput && searchClose) {
+    searchBtn.addEventListener('click', () => {
+      searchBar.style.display = 'flex';
+      setTimeout(() => searchBar.classList.add('active'), 10);
+      searchBtn.style.display = 'none';
+      searchInput.value = '';
+      searchInput.focus();
+      clearHighlights();
+    });
+    searchClose.addEventListener('click', () => {
+      searchBar.classList.remove('active');
+      setTimeout(() => { searchBar.style.display = 'none'; }, 300);
+      searchBtn.style.display = '';
+      searchInput.value = '';
+      clearHighlights();
+    });
+    searchInput.addEventListener('input', (e) => {
+      updateHighlights(e.target.value);
+    });
+    arrowDown.addEventListener('click', () => {
+      if (!matches.length) return;
+      currentMatch = (currentMatch + 1) % matches.length;
+      scrollToMatch(currentMatch);
+    });
+    arrowUp.addEventListener('click', () => {
+      if (!matches.length) return;
+      currentMatch = (currentMatch - 1 + matches.length) % matches.length;
+      scrollToMatch(currentMatch);
+    });
+    searchInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' && matches.length) {
+        arrowDown.click();
+        e.preventDefault();
+      }
+    });
+  }
 }); 

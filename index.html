@@ -36,7 +36,21 @@
       <header class="chat-header">
         <h2 class="channel-title"><!-- Channel name --></h2>
         <div class="chat-actions">
-          <button title="Search">🔍</button>
+          <button class="search-btn icon-btn" title="Search" aria-label="Search">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          </button>
+          <div class="search-bar-container" style="display:none;">
+            <input type="text" class="search-bar-input" placeholder="Search messages..." />
+            <button class="search-bar-arrow search-bar-arrow-up" title="Previous match" aria-label="Previous match">
+              <svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 12 10 8 14 12"/></svg>
+            </button>
+            <button class="search-bar-arrow search-bar-arrow-down" title="Next match" aria-label="Next match">
+              <svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 8 10 12 14 8"/></svg>
+            </button>
+            <button class="search-bar-close icon-btn" title="Close search" aria-label="Close search">
+              <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="6" y1="6" x2="14" y2="14"/><line x1="14" y1="6" x2="6" y2="14"/></svg>
+            </button>
+          </div>
           <button title="Settings">⚙️</button>
         </div>
       </header>
