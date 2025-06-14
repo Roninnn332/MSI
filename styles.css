@@ -1892,6 +1892,7 @@ body {
   outline: none;
   transition: border 0.2s, box-shadow 0.2s;
   min-width: 0;
+  border: none;
 }
 .search-bar-input:focus {
   border: 1.5px solid var(--accent);
@@ -1931,4 +1932,25 @@ body {
   box-shadow: 0 0 0 3px var(--accent-hover), 0 2px 16px var(--accent);
   background: linear-gradient(90deg, var(--accent-hover) 20%, transparent 100%) !important;
   border-radius: 16px !important;
+}
+
+.chat-attach-btn {
+  margin-right: 8px;
+  background: var(--background-tertiary);
+  color: var(--accent);
+  border: none;
+  border-radius: 8px;
+  width: 38px;
+  height: 38px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.2rem;
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s, box-shadow 0.2s;
+  box-shadow: 0 1px 4px var(--shadow);
+}
+.chat-attach-btn:hover {
+  background: var(--accent);
+  color: var(--text);
 } 

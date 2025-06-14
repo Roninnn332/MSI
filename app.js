@@ -1103,21 +1103,6 @@ document.addEventListener('DOMContentLoaded', function() {
     chatInput.style.display = '';
   }
 
-  // After sending a message, auto-focus input
-  const chatInputForm = document.querySelector('.chat-input');
-  if (chatInputForm) {
-    chatInputForm.addEventListener('submit', function(e) {
-      e.preventDefault();
-      const input = chatInputForm.querySelector('input[type="text"]');
-      const content = input.value;
-      if (typeof sendDmMessage === 'function') {
-        sendDmMessage(content);
-      }
-      input.value = '';
-      input.focus();
-    });
-  }
-
   // --- Premium Chat Search Logic ---
   const searchBtn = document.querySelector('.search-btn');
   const searchBar = document.querySelector('.search-bar-container');
@@ -1197,6 +1182,83 @@ document.addEventListener('DOMContentLoaded', function() {
         arrowDown.click();
         e.preventDefault();
       }
+    });
+  }
+
+  // --- Chat File Attachment Logic ---
+  const attachBtn = document.querySelector('.chat-attach-btn');
+  const fileInput = document.querySelector('.chat-file-input');
+  const chatInputForm = document.querySelector('.chat-input');
+  let attachedFile = null;
+  let filePreviewEl = null;
+
+  function showFilePreview(file) {
+    removeFilePreview();
+    filePreviewEl = document.createElement('div');
+    filePreviewEl.className = 'chat-file-preview';
+    let preview = '';
+    if (file.type.startsWith('image/')) {
+      preview = `<img src="${URL.createObjectURL(file)}" style="max-width:80px;max-height:80px;border-radius:8px;box-shadow:0 2px 8px var(--shadow);margin-right:8px;" />`;
+    } else if (file.type.startsWith('video/')) {
+      preview = `<video src="${URL.createObjectURL(file)}" style="max-width:80px;max-height:80px;border-radius:8px;box-shadow:0 2px 8px var(--shadow);margin-right:8px;" controls></video>`;
+    } else if (file.type.startsWith('audio/')) {
+      preview = `<audio src="${URL.createObjectURL(file)}" controls style="margin-right:8px;"></audio>`;
+    } else {
+      preview = `<span style="color:var(--accent);font-weight:600;">${file.name}</span>`;
+    }
+    filePreviewEl.innerHTML = `
+      <div style="display:flex;align-items:center;gap:8px;">
+        ${preview}
+        <button type="button" class="chat-file-remove icon-btn" title="Remove file" style="background:var(--background-tertiary);color:var(--accent);border-radius:50%;width:28px;height:28px;display:flex;align-items:center;justify-content:center;font-size:1.1rem;cursor:pointer;"><svg width="16" height="16" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="6" y1="6" x2="14" y2="14"/><line x1="14" y1="6" x2="6" y2="14"/></svg></button>
+      </div>
+    `;
+    chatInputForm.parentNode.insertBefore(filePreviewEl, chatInputForm);
+    filePreviewEl.querySelector('.chat-file-remove').onclick = removeFilePreview;
+  }
+  function removeFilePreview() {
+    if (filePreviewEl) filePreviewEl.remove();
+    filePreviewEl = null;
+    attachedFile = null;
+    if (fileInput) fileInput.value = '';
+  }
+  if (attachBtn && fileInput) {
+    attachBtn.addEventListener('click', () => fileInput.click());
+    fileInput.addEventListener('change', (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+      if (file.size > 50 * 1024 * 1024) {
+        showChatError('File too large (max 50MB)');
+        fileInput.value = '';
+        return;
+      }
+      attachedFile = file;
+      showFilePreview(file);
+    });
+  }
+  function showChatError(msg) {
+    let err = document.querySelector('.chat-file-error');
+    if (!err) {
+      err = document.createElement('div');
+      err.className = 'chat-file-error';
+      err.style.cssText = 'color:#fff;background:#d32f2f;padding:7px 16px;border-radius:8px;font-size:1rem;position:absolute;bottom:70px;left:50%;transform:translateX(-50%);z-index:100;box-shadow:0 2px 8px #d32f2f;animation:fadeIn 0.4s;';
+      document.body.appendChild(err);
+    }
+    err.textContent = msg;
+    err.style.display = 'block';
+    setTimeout(() => { err.style.display = 'none'; }, 1800);
+  }
+  if (chatInputForm) {
+    chatInputForm.addEventListener('submit', function(e) {
+      e.preventDefault();
+      const input = chatInputForm.querySelector('input[type="text"]');
+      const content = input.value;
+      // If file attached, handle upload here (to be implemented)
+      removeFilePreview();
+      if (typeof sendDmMessage === 'function') {
+        sendDmMessage(content);
+      }
+      input.value = '';
+      input.focus();
     });
   }
 }); 
