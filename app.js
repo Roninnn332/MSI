@@ -313,11 +313,10 @@ function appendDmMessage(msg, friendName, friendAvatar, isMine, showAvatar, show
       ${!isMine && showAvatar ? `<img src="${friendAvatar || ''}" alt="${friendName}" class="dm-message-avatar" style="width:28px;height:28px;border-radius:50%;object-fit:cover;margin-right:8px;${friendAvatar ? '' : 'display:none;'}" />` : ''}
       <div class="dm-message-bubble dm-message-animate-in" data-content="${escapeHtml(msg.content)}" data-time="${fullTime}" title="${fullTime}">
         ${!isMine && showName ? `<div class="dm-message-sender" style="font-size:0.92rem;color:var(--accent);font-weight:500;">${friendName}</div>` : ''}
-        <span class="dm-message-content">${escapeHtml(msg.content)}</span>
-        <div style="display:flex;align-items:center;justify-content:flex-end;gap:2px;">
-          ${showTime ? `<div class="dm-message-meta">${formatTime(msg.created_at)}</div>` : ''}
+        <span class="dm-message-content">${escapeHtml(msg.content)}"
+          ${showTime ? `<span class="dm-message-meta">${formatTime(msg.created_at)}</span>` : ''}
           ${checkHtml}
-        </div>
+        </span>
         <div class="dm-message-tooltip" style="display:none;position:absolute;bottom:100%;left:50%;transform:translateX(-50%) translateY(-8px);background:var(--accent);color:#fff;padding:3px 10px;border-radius:8px;font-size:0.92em;white-space:nowrap;box-shadow:0 2px 8px rgba(40,16,80,0.13);z-index:10;">Copied!</div>
       </div>
     </div>

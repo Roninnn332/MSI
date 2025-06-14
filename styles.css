@@ -1693,7 +1693,7 @@ body {
   background: #fff;
   color: #23272f;
   border-radius: 18px 18px 18px 6px;
-  padding: 8px 18px 14px 18px;
+  padding: 4px 12px 8px 12px;
   margin-bottom: 2px;
   box-shadow: 0 2px 8px rgba(40,16,80,0.07);
   font-size: 1.06rem;
@@ -1743,11 +1743,12 @@ body {
 .dm-message-meta {
   font-size: 0.81rem;
   color: #bdbdbd;
-  margin-top: 4px;
+  margin-left: 8px;
+  margin-top: 0;
   text-align: right;
   display: inline-block;
-  margin-left: 8px;
   user-select: none;
+  vertical-align: middle;
 }
 .dm-message.mine .dm-message-meta {
   color: #e0f7e9;
@@ -1825,14 +1826,14 @@ body {
   .dm-message-bubble {
     max-width: 90vw;
     font-size: 0.98rem;
-    padding: 8px 10px 12px 10px;
+    padding: 4px 7px 7px 7px;
   }
 }
 @media (max-width: 600px) {
   .dm-message-bubble {
     max-width: 98vw;
     font-size: 0.95rem;
-    padding: 7px 7px 10px 7px;
+    padding: 3px 4px 6px 4px;
   }
 }
 .dm-message-animate-in {
