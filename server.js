@@ -11,6 +11,15 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
 
 const app = express();
 app.use(cors());
+
+// Serve static files (index.html, app.js, styles.css, assets)
+app.use(express.static(__dirname));
+
+// Fallback: serve index.html for any non-API, non-Socket.IO route (SPA support)
+app.get(/^\/(?!dm\/|socket.io\/).*/, (req, res) => {
+  res.sendFile(__dirname + '/index.html');
+});
+
 const server = http.createServer(app);
 const io = new Server(server, {
   cors: { origin: '*' }
