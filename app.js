@@ -134,6 +134,7 @@ function renderFriendsSidebar() {
     `;
     li.onclick = () => {
       selectedFriendId = friend.id;
+      renderFriendsChat(friend);
       openDmWithFriend(friend.id, friend.name);
       document.querySelectorAll('.friend-list-item').forEach(el => el.classList.remove('active'));
       li.classList.add('active');
