@@ -240,6 +240,7 @@ function openDmWithFriend(friendId, friendName) {
 function sendDmMessage(content) {
   const from = localStorage.getItem('user_id');
   const to = currentDmFriendId;
+  console.log('sendDmMessage from:', from, 'to:', to, 'content:', content); // Debug
   if (!content.trim() || !to) return;
   socket.emit('dm_message', { from, to, content });
 }
@@ -288,13 +289,23 @@ function appendDmMessage(msg, friendName, friendAvatar, isMine, showAvatar, show
   const messagesSection = document.querySelector('.messages');
   const div = document.createElement('div');
   div.className = isMine ? 'dm-message mine' : 'dm-message';
+  // WhatsApp checkmarks
+  let checkHtml = '';
+  if (isMine) {
+    // For demo, always show double green check
+    checkHtml = '<span class="dm-message-check delivered">&#10003;&#10003;</span>';
+  }
+  console.log('appendDmMessage', {msg, isMine, userId: localStorage.getItem('user_id')}); // Debug
   div.innerHTML = `
     <div class="dm-message-bubble-wrapper" style="display:flex;align-items:flex-end;${isMine ? 'justify-content:flex-end;' : ''}">
       ${!isMine && showAvatar ? `<img src="${friendAvatar || ''}" alt="${friendName}" class="dm-message-avatar" style="width:28px;height:28px;border-radius:50%;object-fit:cover;margin-right:8px;${friendAvatar ? '' : 'display:none;'}" />` : ''}
       <div class="dm-message-bubble dm-message-animate-in">
         ${!isMine && showName ? `<div class="dm-message-sender" style="font-size:0.92rem;color:var(--accent);font-weight:500;">${friendName}</div>` : ''}
         <span class="dm-message-content">${escapeHtml(msg.content)}</span>
-        ${showTime ? `<div class="dm-message-meta" style="font-size:0.85rem;color:var(--text-secondary);margin-top:2px;">${formatTime(msg.created_at)}</div>` : ''}
+        <div style="display:flex;align-items:center;justify-content:flex-end;gap:2px;">
+          ${showTime ? `<div class="dm-message-meta">${formatTime(msg.created_at)}</div>` : ''}
+          ${checkHtml}
+        </div>
       </div>
     </div>
   `;
