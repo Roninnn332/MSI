@@ -34,12 +34,12 @@ io.on('connection', (socket) => {
   });
 
   // Handle sending a DM
-  socket.on('dm_message', async ({ from, to, content }) => {
+  socket.on('dm_message', async ({ from, to, content, file_url, file_type, file_name }) => {
     const room = getDmRoom(from, to);
     // Save to Supabase
     const { data, error } = await supabase
       .from('messages')
-      .insert([{ sender_id: from, receiver_id: to, content }])
+      .insert([{ sender_id: from, receiver_id: to, content, file_url, file_type, file_name }])
       .select()
       .single();
     if (error) {
@@ -52,6 +52,9 @@ io.on('connection', (socket) => {
       from,
       to,
       content,
+      file_url: data.file_url,
+      file_type: data.file_type,
+      file_name: data.file_name,
       created_at: data.created_at
     });
   });
