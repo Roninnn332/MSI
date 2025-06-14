@@ -237,12 +237,11 @@ function openDmWithFriend(friendId, friendName) {
     .then(messages => renderDmMessages(messages, friendName, friendAvatar, friendStatus));
 }
 
-function sendDmMessage(content) {
+function sendDmMessage(content, file_url, file_type, file_name) {
   const from = localStorage.getItem('user_id');
   const to = currentDmFriendId;
-  console.log('sendDmMessage from:', from, 'to:', to, 'content:', content); // Debug
-  if (!content.trim() || !to) return;
-  socket.emit('dm_message', { from, to, content });
+  if ((!content.trim() && !file_url) || !to) return;
+  socket.emit('dm_message', { from, to, content, file_url, file_type, file_name });
 }
 
 socket.on('dm_message', (msg) => {
@@ -300,19 +299,29 @@ function appendDmMessage(msg, friendName, friendAvatar, isMine, showAvatar, show
   const messagesSection = document.querySelector('.messages');
   const div = document.createElement('div');
   div.className = isMine ? 'dm-message mine' : 'dm-message';
-  // WhatsApp checkmarks
   let checkHtml = '';
   if (isMine) {
-    // For demo, always show double blue check
     checkHtml = '<span class="dm-message-check read">&#10003;&#10003;</span>';
   }
-  // Tooltip for timestamp
   const fullTime = formatFullTime(msg.created_at);
+  let fileHtml = '';
+  if (msg.file_url) {
+    if (msg.file_type === 'image') {
+      fileHtml = `<img src="${msg.file_url}" class="dm-msg-img" style="max-width:220px;max-height:180px;border-radius:10px;box-shadow:0 2px 8px var(--shadow);margin-bottom:4px;cursor:pointer;transition:box-shadow 0.2s;" onclick="window.open('${msg.file_url}','_blank')" />`;
+    } else if (msg.file_type === 'video') {
+      fileHtml = `<video src="${msg.file_url}" class="dm-msg-video" style="max-width:220px;max-height:180px;border-radius:10px;box-shadow:0 2px 8px var(--shadow);margin-bottom:4px;" controls></video>`;
+    } else if (msg.file_type === 'audio') {
+      fileHtml = `<audio src="${msg.file_url}" class="dm-msg-audio" style="width:180px;margin-bottom:4px;" controls></audio>`;
+    } else if (msg.file_type === 'document') {
+      fileHtml = `<a href="${msg.file_url}" class="dm-msg-doc" target="_blank" style="display:flex;align-items:center;gap:8px;color:var(--accent);font-weight:600;text-decoration:none;margin-bottom:4px;"><svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="12" height="12" rx="2"/><line x1="8" y1="8" x2="12" y2="8"/><line x1="8" y1="12" x2="12" y2="12"/></svg>${msg.file_name || 'Document'}</a>`;
+    }
+  }
   div.innerHTML = `
     <div class="dm-message-bubble-wrapper" style="display:flex;align-items:flex-end;${isMine ? 'justify-content:flex-end;' : ''}">
       ${!isMine && showAvatar ? `<img src="${friendAvatar || ''}" alt="${friendName}" class="dm-message-avatar" style="width:28px;height:28px;border-radius:50%;object-fit:cover;margin-right:8px;${friendAvatar ? '' : 'display:none;'}" />` : ''}
       <div class="dm-message-bubble dm-message-animate-in" data-content="${escapeHtml(msg.content)}" data-time="${fullTime}" title="${fullTime}">
         ${!isMine && showName ? `<div class="dm-message-sender" style="font-size:0.92rem;color:var(--accent);font-weight:500;">${friendName}</div>` : ''}
+        ${fileHtml}
         <span class="dm-message-content">${escapeHtml(msg.content)}"
           ${showTime ? `<span class="dm-message-meta">${formatTime(msg.created_at)}</span>` : ''}
           ${checkHtml}
@@ -322,14 +331,12 @@ function appendDmMessage(msg, friendName, friendAvatar, isMine, showAvatar, show
     </div>
   `;
   messagesSection.appendChild(div);
-  // Animate bubble in
   const bubble = div.querySelector('.dm-message-bubble');
   if (bubble) {
     bubble.addEventListener('animationend', function handler() {
       bubble.classList.remove('dm-message-animate-in');
       bubble.removeEventListener('animationend', handler);
     });
-    // Copy on click
     bubble.addEventListener('click', function(e) {
       const content = bubble.getAttribute('data-content');
       if (!content) return;
@@ -341,7 +348,6 @@ function appendDmMessage(msg, friendName, friendAvatar, isMine, showAvatar, show
       }
     });
   }
-  // Scroll to bottom smoothly
   messagesSection.scrollTo({ top: messagesSection.scrollHeight, behavior: 'smooth' });
 }
 
@@ -1191,6 +1197,7 @@ document.addEventListener('DOMContentLoaded', function() {
   const chatInputForm = document.querySelector('.chat-input');
   let attachedFile = null;
   let filePreviewEl = null;
+  let isUploading = false;
 
   function showFilePreview(file) {
     removeFilePreview();
@@ -1247,16 +1254,59 @@ document.addEventListener('DOMContentLoaded', function() {
     err.style.display = 'block';
     setTimeout(() => { err.style.display = 'none'; }, 1800);
   }
+
+  // --- Upload and Send Logic ---
+  async function uploadFileAndSend(content) {
+    if (!attachedFile) {
+      sendDmMessage(content);
+      return;
+    }
+    isUploading = true;
+    setSendButtonLoading(true);
+    try {
+      let fileUrl = '';
+      let fileType = '';
+      let fileName = attachedFile.name;
+      if (attachedFile.type.startsWith('image/')) {
+        fileType = 'image';
+        fileUrl = await uploadToCloudinary(attachedFile, 'image');
+      } else if (attachedFile.type.startsWith('video/')) {
+        fileType = 'video';
+        fileUrl = await uploadToCloudinary(attachedFile, 'video');
+      } else if (attachedFile.type.startsWith('audio/')) {
+        fileType = 'audio';
+        fileUrl = await uploadToCloudinary(attachedFile, 'raw');
+      } else {
+        fileType = 'document';
+        fileUrl = await uploadToCloudinary(attachedFile, 'raw');
+      }
+      sendDmMessage(content, fileUrl, fileType, fileName);
+    } catch (err) {
+      showChatError('Upload failed. Try again.');
+    } finally {
+      isUploading = false;
+      setSendButtonLoading(false);
+      removeFilePreview();
+    }
+  }
+  function setSendButtonLoading(loading) {
+    const sendBtn = chatInputForm.querySelector('button[type="submit"]');
+    if (!sendBtn) return;
+    if (loading) {
+      sendBtn.disabled = true;
+      sendBtn.innerHTML = '<span class="spinner" style="width:20px;height:20px;border-width:3px;"></span>';
+    } else {
+      sendBtn.disabled = false;
+      sendBtn.textContent = 'Send';
+    }
+  }
   if (chatInputForm) {
-    chatInputForm.addEventListener('submit', function(e) {
+    chatInputForm.addEventListener('submit', async function(e) {
       e.preventDefault();
+      if (isUploading) return;
       const input = chatInputForm.querySelector('input[type="text"]');
       const content = input.value;
-      // If file attached, handle upload here (to be implemented)
-      removeFilePreview();
-      if (typeof sendDmMessage === 'function') {
-        sendDmMessage(content);
-      }
+      await uploadFileAndSend(content);
       input.value = '';
       input.focus();
     });
