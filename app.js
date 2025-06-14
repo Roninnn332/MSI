@@ -979,7 +979,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
   // --- Real-time DM Chat Logic ---
   // Connect to your backend server
-  const socket = io('http://localhost:4000'); // Change to your backend URL if needed
+  const socket = io(); // Use same origin for deployment
 
   let currentDmFriendId = null;
   let currentDmFriendName = null;
