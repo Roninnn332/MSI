@@ -273,7 +273,13 @@ function renderDmMessages(messages, friendName, friendAvatar, friendStatus) {
   messagesSection.innerHTML = '';
   let lastSender = null;
   let lastTime = null;
-  messages.forEach((msg, i) => {
+  // Normalize all messages to have .from and .to
+  const normalizedMessages = messages.map(msg => ({
+    ...msg,
+    from: msg.from || msg.sender_id,
+    to: msg.to || msg.receiver_id,
+  }));
+  normalizedMessages.forEach((msg, i) => {
     const isMine = msg.from === localStorage.getItem('user_id');
     const showAvatar = !isMine && (lastSender !== msg.from);
     const showName = !isMine && (lastSender !== msg.from);
@@ -285,6 +291,11 @@ function renderDmMessages(messages, friendName, friendAvatar, friendStatus) {
   messagesSection.scrollTop = messagesSection.scrollHeight;
 }
 
+function formatFullTime(dateStr) {
+  const d = new Date(dateStr);
+  return d.toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' });
+}
+
 function appendDmMessage(msg, friendName, friendAvatar, isMine, showAvatar, showName, showTime) {
   const messagesSection = document.querySelector('.messages');
   const div = document.createElement('div');
@@ -292,20 +303,22 @@ function appendDmMessage(msg, friendName, friendAvatar, isMine, showAvatar, show
   // WhatsApp checkmarks
   let checkHtml = '';
   if (isMine) {
-    // For demo, always show double green check
-    checkHtml = '<span class="dm-message-check delivered">&#10003;&#10003;</span>';
+    // For demo, always show double blue check
+    checkHtml = '<span class="dm-message-check read">&#10003;&#10003;</span>';
   }
-  console.log('appendDmMessage', {msg, isMine, userId: localStorage.getItem('user_id')}); // Debug
+  // Tooltip for timestamp
+  const fullTime = formatFullTime(msg.created_at);
   div.innerHTML = `
     <div class="dm-message-bubble-wrapper" style="display:flex;align-items:flex-end;${isMine ? 'justify-content:flex-end;' : ''}">
       ${!isMine && showAvatar ? `<img src="${friendAvatar || ''}" alt="${friendName}" class="dm-message-avatar" style="width:28px;height:28px;border-radius:50%;object-fit:cover;margin-right:8px;${friendAvatar ? '' : 'display:none;'}" />` : ''}
-      <div class="dm-message-bubble dm-message-animate-in">
+      <div class="dm-message-bubble dm-message-animate-in" data-content="${escapeHtml(msg.content)}" data-time="${fullTime}" title="${fullTime}">
         ${!isMine && showName ? `<div class="dm-message-sender" style="font-size:0.92rem;color:var(--accent);font-weight:500;">${friendName}</div>` : ''}
         <span class="dm-message-content">${escapeHtml(msg.content)}</span>
         <div style="display:flex;align-items:center;justify-content:flex-end;gap:2px;">
           ${showTime ? `<div class="dm-message-meta">${formatTime(msg.created_at)}</div>` : ''}
           ${checkHtml}
         </div>
+        <div class="dm-message-tooltip" style="display:none;position:absolute;bottom:100%;left:50%;transform:translateX(-50%) translateY(-8px);background:var(--accent);color:#fff;padding:3px 10px;border-radius:8px;font-size:0.92em;white-space:nowrap;box-shadow:0 2px 8px rgba(40,16,80,0.13);z-index:10;">Copied!</div>
       </div>
     </div>
   `;
@@ -317,7 +330,20 @@ function appendDmMessage(msg, friendName, friendAvatar, isMine, showAvatar, show
       bubble.classList.remove('dm-message-animate-in');
       bubble.removeEventListener('animationend', handler);
     });
+    // Copy on click
+    bubble.addEventListener('click', function(e) {
+      const content = bubble.getAttribute('data-content');
+      if (!content) return;
+      navigator.clipboard.writeText(content);
+      const tooltip = bubble.querySelector('.dm-message-tooltip');
+      if (tooltip) {
+        tooltip.style.display = 'block';
+        setTimeout(() => { tooltip.style.display = 'none'; }, 1200);
+      }
+    });
   }
+  // Scroll to bottom smoothly
+  messagesSection.scrollTo({ top: messagesSection.scrollHeight, behavior: 'smooth' });
 }
 
 function escapeHtml(text) {
@@ -1078,7 +1104,7 @@ document.addEventListener('DOMContentLoaded', function() {
     chatInput.style.display = '';
   }
 
-  // Prevent page reload on DM chat form submit
+  // After sending a message, auto-focus input
   const chatInputForm = document.querySelector('.chat-input');
   if (chatInputForm) {
     chatInputForm.addEventListener('submit', function(e) {
@@ -1089,6 +1115,7 @@ document.addEventListener('DOMContentLoaded', function() {
         sendDmMessage(content);
       }
       input.value = '';
+      input.focus();
     });
   }
 }); 
