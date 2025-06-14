@@ -39,7 +39,14 @@ io.on('connection', (socket) => {
     // Save to Supabase
     const { data, error } = await supabase
       .from('messages')
-      .insert([{ sender_id: from, receiver_id: to, content, file_url, file_type, file_name }])
+      .insert([{
+        sender_id: from,
+        receiver_id: to,
+        content,
+        file_url: file_url || null,
+        file_type: file_type || null,
+        file_name: file_name || null
+      }])
       .select()
       .single();
     if (error) {

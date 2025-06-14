@@ -1939,18 +1939,29 @@ body {
   background: var(--background-tertiary);
   color: var(--accent);
   border: none;
-  border-radius: 8px;
-  width: 38px;
-  height: 38px;
+  border-radius: 50%;
+  width: 40px;
+  height: 40px;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 1.2rem;
+  font-size: 1.3rem;
   cursor: pointer;
-  transition: background 0.2s, color 0.2s, box-shadow 0.2s;
-  box-shadow: 0 1px 4px var(--shadow);
+  transition: background 0.2s, color 0.2s, box-shadow 0.2s, transform 0.18s;
+  box-shadow: 0 2px 8px var(--shadow);
+  outline: none;
+  padding: 0;
 }
-.chat-attach-btn:hover {
+.chat-attach-btn svg {
+  width: 22px;
+  height: 22px;
+  stroke: currentColor;
+  fill: none;
+  display: block;
+}
+.chat-attach-btn:hover, .chat-attach-btn:focus {
   background: var(--accent);
   color: var(--text);
+  transform: scale(1.08);
+  box-shadow: 0 4px 16px var(--accent);
 } 
