@@ -134,7 +134,7 @@ function renderFriendsSidebar() {
     `;
     li.onclick = () => {
       selectedFriendId = friend.id;
-      renderFriendsChat(friend);
+      openDmWithFriend(friend.id, friend.name);
       document.querySelectorAll('.friend-list-item').forEach(el => el.classList.remove('active'));
       li.classList.add('active');
     };
@@ -989,12 +989,13 @@ document.addEventListener('DOMContentLoaded', function() {
     const userId = localStorage.getItem('user_id');
     currentDmFriendId = friendId;
     currentDmFriendName = friendName;
+    const friend = friends.find(f => f.id === friendId);
+    const friendAvatar = friend ? friend.avatar : '';
+    const friendStatus = friend ? friend.status : 'online';
     socket.emit('join_dm', { userId, friendId });
-
-    // Fetch message history
-    fetch(`http://localhost:4000/dm/${userId}/${friendId}`)
+    fetch(`/dm/${userId}/${friendId}`)
       .then(res => res.json())
-      .then(messages => renderDmMessages(messages, friendName));
+      .then(messages => renderDmMessages(messages, friendName, friendAvatar, friendStatus));
   }
 
   // Send a message
@@ -1007,36 +1008,64 @@ document.addEventListener('DOMContentLoaded', function() {
 
   // Listen for incoming messages
   socket.on('dm_message', (msg) => {
-    // Only show if it's for the current DM
     if (
       (msg.from === currentDmFriendId && msg.to === localStorage.getItem('user_id')) ||
       (msg.from === localStorage.getItem('user_id') && msg.to === currentDmFriendId)
     ) {
-      appendDmMessage(msg, currentDmFriendName);
+      const friend = friends.find(f => f.id === currentDmFriendId);
+      const friendAvatar = friend ? friend.avatar : '';
+      const friendStatus = friend ? friend.status : 'online';
+      appendDmMessage(msg, currentDmFriendName, friendAvatar, msg.from === localStorage.getItem('user_id'), !msg.from === localStorage.getItem('user_id'), false, true);
+      document.querySelector('.messages').scrollTop = document.querySelector('.messages').scrollHeight;
     }
   });
 
   // Render all messages in the DM chat area
-  function renderDmMessages(messages, friendName) {
+  function renderDmMessages(messages, friendName, friendAvatar, friendStatus) {
+    // Update chat header with avatar, name, and status
+    const chatHeader = document.querySelector('.chat-header');
+    const channelTitle = document.querySelector('.channel-title');
+    channelTitle.innerHTML = `
+      <div style="display:flex;align-items:center;gap:12px;">
+        <img src="${friendAvatar || ''}" alt="${friendName}" style="width:36px;height:36px;border-radius:50%;object-fit:cover;${friendAvatar ? '' : 'display:none;'}" />
+        <span style="font-weight:600;">${friendName || 'Friend'}</span>
+        <span style="font-size:0.95rem;color:var(--online);margin-left:8px;">${friendStatus || 'online'}</span>
+      </div>
+    `;
+    chatHeader.style.background = 'var(--background-secondary)';
+
     const messagesSection = document.querySelector('.messages');
     messagesSection.innerHTML = '';
-    messages.forEach(msg => appendDmMessage(msg, friendName));
+    let lastSender = null;
+    let lastTime = null;
+    messages.forEach((msg, i) => {
+      const isMine = msg.from === localStorage.getItem('user_id');
+      const showAvatar = !isMine && (lastSender !== msg.from);
+      const showName = !isMine && (lastSender !== msg.from);
+      const showTime = !lastTime || Math.abs(new Date(msg.created_at) - new Date(lastTime)) > 5 * 60 * 1000;
+      appendDmMessage(msg, friendName, friendAvatar, isMine, showAvatar, showName, showTime);
+      lastSender = msg.from;
+      lastTime = msg.created_at;
+    });
+    messagesSection.scrollTop = messagesSection.scrollHeight;
   }
 
   // Append a single message to the DM chat area
-  function appendDmMessage(msg, friendName) {
+  function appendDmMessage(msg, friendName, friendAvatar, isMine, showAvatar, showName, showTime) {
     const messagesSection = document.querySelector('.messages');
-    const isMine = msg.from === localStorage.getItem('user_id');
     const div = document.createElement('div');
     div.className = isMine ? 'dm-message mine' : 'dm-message';
     div.innerHTML = `
-      <div class="dm-message-bubble">
-        <span class="dm-message-content">${escapeHtml(msg.content)}</span>
-        <span class="dm-message-meta">${isMine ? 'You' : (friendName || 'Friend')} • ${formatTime(msg.created_at)}</span>
+      <div class="dm-message-bubble-wrapper" style="display:flex;align-items:flex-end;${isMine ? 'justify-content:flex-end;' : ''}">
+        ${!isMine && showAvatar ? `<img src="${friendAvatar || ''}" alt="${friendName}" class="dm-message-avatar" style="width:28px;height:28px;border-radius:50%;object-fit:cover;margin-right:8px;${friendAvatar ? '' : 'display:none;'}" />` : ''}
+        <div class="dm-message-bubble" style="max-width:70vw;">
+          ${!isMine && showName ? `<div class="dm-message-sender" style="font-size:0.92rem;color:var(--accent);font-weight:500;">${friendName}</div>` : ''}
+          <span class="dm-message-content">${escapeHtml(msg.content)}</span>
+          ${showTime ? `<div class="dm-message-meta" style="font-size:0.85rem;color:var(--text-secondary);margin-top:2px;">${formatTime(msg.created_at)}</div>` : ''}
+        </div>
       </div>
     `;
     messagesSection.appendChild(div);
-    messagesSection.scrollTop = messagesSection.scrollHeight;
   }
 
   // Utility: escape HTML
@@ -1051,17 +1080,5 @@ document.addEventListener('DOMContentLoaded', function() {
     if (!ts) return '';
     const d = new Date(ts);
     return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-  }
-
-  // --- Hook up friend list click to openDmWithFriend ---
-  const channelList = document.querySelector('.channel-list');
-  if (channelList) {
-    channelList.addEventListener('click', function(e) {
-      const li = e.target.closest('.friend-list-item');
-      if (!li) return;
-      const friendId = li.getAttribute('data-friend-id') || (li.dataset ? li.dataset.friendId : null);
-      const friendName = li.querySelector('span') ? li.querySelector('span').textContent : '';
-      if (friendId) openDmWithFriend(friendId, friendName);
-    });
   }
 }); 
