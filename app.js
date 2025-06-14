@@ -291,7 +291,7 @@ function appendDmMessage(msg, friendName, friendAvatar, isMine, showAvatar, show
   div.innerHTML = `
     <div class="dm-message-bubble-wrapper" style="display:flex;align-items:flex-end;${isMine ? 'justify-content:flex-end;' : ''}">
       ${!isMine && showAvatar ? `<img src="${friendAvatar || ''}" alt="${friendName}" class="dm-message-avatar" style="width:28px;height:28px;border-radius:50%;object-fit:cover;margin-right:8px;${friendAvatar ? '' : 'display:none;'}" />` : ''}
-      <div class="dm-message-bubble" style="max-width:70vw;">
+      <div class="dm-message-bubble dm-message-animate-in">
         ${!isMine && showName ? `<div class="dm-message-sender" style="font-size:0.92rem;color:var(--accent);font-weight:500;">${friendName}</div>` : ''}
         <span class="dm-message-content">${escapeHtml(msg.content)}</span>
         ${showTime ? `<div class="dm-message-meta" style="font-size:0.85rem;color:var(--text-secondary);margin-top:2px;">${formatTime(msg.created_at)}</div>` : ''}
@@ -299,6 +299,14 @@ function appendDmMessage(msg, friendName, friendAvatar, isMine, showAvatar, show
     </div>
   `;
   messagesSection.appendChild(div);
+  // Animate bubble in
+  const bubble = div.querySelector('.dm-message-bubble');
+  if (bubble) {
+    bubble.addEventListener('animationend', function handler() {
+      bubble.classList.remove('dm-message-animate-in');
+      bubble.removeEventListener('animationend', handler);
+    });
+  }
 }
 
 function escapeHtml(text) {

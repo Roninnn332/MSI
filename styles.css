@@ -1700,18 +1700,30 @@ body {
   background: var(--background-secondary);
   color: var(--text);
   border-radius: 18px 18px 18px 6px;
-  padding: 10px 16px;
+  padding: 8px 24px;
   margin-bottom: 2px;
   box-shadow: 0 2px 8px var(--shadow);
   font-size: 1.04rem;
-  max-width: 70vw;
+  max-width: 90vw;
+  min-width: 60px;
+  min-height: 28px;
   word-break: break-word;
   position: relative;
+  animation: dmMessageInLeft 0.38s cubic-bezier(.4,0,.2,1);
 }
 .dm-message.mine .dm-message-bubble {
   background: var(--accent);
   color: var(--background);
   border-radius: 18px 18px 6px 18px;
+  animation: dmMessageInRight 0.38s cubic-bezier(.4,0,.2,1);
+}
+@keyframes dmMessageInLeft {
+  from { opacity: 0; transform: translateX(-32px) scale(0.98); }
+  to   { opacity: 1; transform: translateX(0) scale(1); }
+}
+@keyframes dmMessageInRight {
+  from { opacity: 0; transform: translateX(32px) scale(0.98); }
+  to   { opacity: 1; transform: translateX(0) scale(1); }
 }
 .dm-message-meta {
   font-size: 0.85rem;
@@ -1740,4 +1752,9 @@ body {
   bottom: 0;
   background: var(--background-secondary);
   z-index: 10;
+}
+
+.dm-message-animate-in {
+  /* This class is used to trigger the entry animation for new message bubbles. */
+  /* The animation is set by the .dm-message-bubble and .dm-message.mine .dm-message-bubble selectors. */
 } 
