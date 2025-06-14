@@ -978,13 +978,11 @@ document.addEventListener('DOMContentLoaded', function() {
   }
 
   // --- Real-time DM Chat Logic ---
-  // Connect to your backend server
   const socket = io(); // Use same origin for deployment
 
   let currentDmFriendId = null;
   let currentDmFriendName = null;
 
-  // Call this when a user clicks a friend in the sidebar
   function openDmWithFriend(friendId, friendName) {
     const userId = localStorage.getItem('user_id');
     currentDmFriendId = friendId;
@@ -998,7 +996,6 @@ document.addEventListener('DOMContentLoaded', function() {
       .then(messages => renderDmMessages(messages, friendName, friendAvatar, friendStatus));
   }
 
-  // Send a message
   function sendDmMessage(content) {
     const from = localStorage.getItem('user_id');
     const to = currentDmFriendId;
@@ -1006,7 +1003,6 @@ document.addEventListener('DOMContentLoaded', function() {
     socket.emit('dm_message', { from, to, content });
   }
 
-  // Listen for incoming messages
   socket.on('dm_message', (msg) => {
     if (
       (msg.from === currentDmFriendId && msg.to === localStorage.getItem('user_id')) ||
@@ -1020,9 +1016,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
   });
 
-  // Render all messages in the DM chat area
   function renderDmMessages(messages, friendName, friendAvatar, friendStatus) {
-    // Update chat header with avatar, name, and status
     const chatHeader = document.querySelector('.chat-header');
     const channelTitle = document.querySelector('.channel-title');
     channelTitle.innerHTML = `
@@ -1033,7 +1027,6 @@ document.addEventListener('DOMContentLoaded', function() {
       </div>
     `;
     chatHeader.style.background = 'var(--background-secondary)';
-
     const messagesSection = document.querySelector('.messages');
     messagesSection.innerHTML = '';
     let lastSender = null;
@@ -1050,7 +1043,6 @@ document.addEventListener('DOMContentLoaded', function() {
     messagesSection.scrollTop = messagesSection.scrollHeight;
   }
 
-  // Append a single message to the DM chat area
   function appendDmMessage(msg, friendName, friendAvatar, isMine, showAvatar, showName, showTime) {
     const messagesSection = document.querySelector('.messages');
     const div = document.createElement('div');
@@ -1068,14 +1060,12 @@ document.addEventListener('DOMContentLoaded', function() {
     messagesSection.appendChild(div);
   }
 
-  // Utility: escape HTML
   function escapeHtml(text) {
     return text.replace(/[&<>'\"]/g, c => ({
       '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;'
     }[c]));
   }
 
-  // Utility: format time
   function formatTime(ts) {
     if (!ts) return '';
     const d = new Date(ts);
