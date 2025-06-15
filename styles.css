@@ -2074,7 +2074,14 @@ body {
   margin: 6px 0;
 }
 
+.invite-people-option {
+  position: relative;
+}
 .invite-code-tooltip {
+  position: absolute;
+  left: 110%;
+  top: 50%;
+  transform: translateY(-50%) scale(0.98);
   display: inline-block;
   background: var(--background-tertiary);
   color: var(--accent);
@@ -2089,9 +2096,6 @@ body {
   pointer-events: none;
   transform: translateY(8px) scale(0.98);
   transition: opacity 0.22s cubic-bezier(.4,0,.2,1), transform 0.22s cubic-bezier(.4,0,.2,1);
-  position: absolute;
-  left: 120%;
-  top: 50%;
   white-space: nowrap;
   z-index: 200;
 }

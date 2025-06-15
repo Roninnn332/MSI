@@ -17,7 +17,7 @@ function updateInviteTooltip() {
   if (inviteTooltip) {
     let code = window.selectedServer.invite_code;
     if (!code) {
-      inviteTooltip.innerHTML = `<span class=\"invite-code-text\" style=\"color:#ffb84d;\">No invite code set</span>`;
+      inviteTooltip.innerHTML = `<span class=\"invite-code-text\" style=\"color:#ffb84d;\">No invite code set</span> <button class=\"generate-invite-btn\">Generate</button>`;
     } else {
       inviteTooltip.innerHTML =
         `<span class=\"invite-code-text\">${code}</span>` +
@@ -25,7 +25,31 @@ function updateInviteTooltip() {
     }
     inviteTooltip.style.display = '';
     inviteTooltip.classList.remove('copied');
+    // Add event for generate button
+    const genBtn = inviteTooltip.querySelector('.generate-invite-btn');
+    if (genBtn) {
+      genBtn.onclick = async function(e) {
+        e.stopPropagation();
+        genBtn.disabled = true;
+        genBtn.textContent = 'Generating...';
+        const newCode = generateInviteCode();
+        // Update in Supabase
+        await supabase.from('servers').update({ invite_code: newCode }).eq('id', window.selectedServer.id);
+        window.selectedServer.invite_code = newCode;
+        updateInviteTooltip();
+      };
+    }
   }
+}
+
+// Helper to generate invite code
+function generateInviteCode(length = 8) {
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  let code = '';
+  for (let i = 0; i < length; i++) {
+    code += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+  return code;
 }
 
 // Fetch user profile
