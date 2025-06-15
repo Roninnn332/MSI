@@ -143,6 +143,17 @@ function renderFriendsSidebar() {
   });
 }
 
+// Utility to show/hide welcome overlay
+function showWelcomeMessage() {
+  const welcome = document.getElementById('welcome-message');
+  if (welcome) welcome.classList.remove('hide');
+}
+function hideWelcomeMessage() {
+  const welcome = document.getElementById('welcome-message');
+  if (welcome) welcome.classList.add('hide');
+}
+
+// --- Modify renderFriendsChat to hide welcome overlay when a friend is selected ---
 function renderFriendsChat(friend) {
   const chatHeader = document.querySelector('.chat-header');
   const channelTitle = document.querySelector('.channel-title');
@@ -154,6 +165,7 @@ function renderFriendsChat(friend) {
   if (!friend) {
     messagesSection.innerHTML = '<div style="color:var(--text-secondary);font-size:1.1rem;text-align:center;margin-top:40px;">Select a friend to start chatting</div>';
     chatInput.style.display = 'none';
+    showWelcomeMessage();
     return;
   }
   // Mock DM messages
@@ -161,6 +173,7 @@ function renderFriendsChat(friend) {
     <div style="color:var(--text-secondary);font-size:1.1rem;text-align:center;margin-top:40px;">This is the beginning of your direct message with <b>${friend.name}</b>.</div>
   `;
   chatInput.style.display = '';
+  hideWelcomeMessage();
   // Animate input
   chatInput.classList.remove('chat-input-animate-in');
   void chatInput.offsetWidth; // force reflow
@@ -257,6 +270,7 @@ socket.on('dm_message', (msg) => {
   }
 });
 
+// --- Modify renderDmMessages to hide welcome overlay when messages are rendered ---
 function renderDmMessages(messages, friendName, friendAvatar, friendStatus) {
   const chatHeader = document.querySelector('.chat-header');
   const channelTitle = document.querySelector('.channel-title');
@@ -288,6 +302,11 @@ function renderDmMessages(messages, friendName, friendAvatar, friendStatus) {
     lastTime = msg.created_at;
   });
   messagesSection.scrollTop = messagesSection.scrollHeight;
+  if (normalizedMessages.length > 0) {
+    hideWelcomeMessage();
+  } else {
+    showWelcomeMessage();
+  }
 }
 
 function formatFullTime(dateStr) {
@@ -1311,4 +1330,6 @@ document.addEventListener('DOMContentLoaded', function() {
       input.focus();
     });
   }
+
+  showWelcomeMessage();
 }); 
