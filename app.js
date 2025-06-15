@@ -37,21 +37,120 @@ async function fetchServers() {
     serverList.appendChild(skeleton);
   }
   try {
-    const { data, error } = await supabase.from('servers').select('*');
+    const userId = localStorage.getItem('user_id');
+    // Only fetch servers the user is a member of
+    const { data, error } = await supabase
+      .from('server_members')
+      .select('servers:server_id(*, owner:owner_id(display_name))')
+      .eq('user_id', userId);
     serverList.innerHTML = '';
     if (error) {
       console.error('Error fetching servers:', error);
       return;
     }
-    data.forEach(server => {
+    // Flatten and filter out nulls
+    const servers = (data || []).map(sm => sm.servers).filter(Boolean);
+    servers.forEach(server => {
       const li = document.createElement('li');
       li.innerHTML = `<img src="${server.icon_url}" alt="${server.name}" title="${server.name}" />`;
+      li.style.cursor = 'pointer';
+      li.addEventListener('click', () => {
+        selectServer(server);
+      });
       serverList.appendChild(li);
     });
+    // If a server is already selected, keep it selected, else select the first
+    if (servers.length > 0 && !window.selectedServer) {
+      selectServer(servers[0]);
+    }
   } catch (err) {
     serverList.innerHTML = '';
     console.error('Error fetching servers:', err);
   }
+}
+
+// Show/hide server header and dropdown
+function showServerHeader(server) {
+  const header = document.querySelector('.channels-server-header');
+  const ownerSpan = document.querySelector('.server-owner-name');
+  if (header && ownerSpan) {
+    ownerSpan.textContent = `${server.owner && server.owner.display_name ? server.owner.display_name : 'Unknown'}'s Server`;
+    header.style.display = 'flex';
+  }
+}
+function hideServerHeader() {
+  const header = document.querySelector('.channels-server-header');
+  if (header) header.style.display = 'none';
+  const dropdown = document.querySelector('.server-dropdown-menu');
+  if (dropdown) dropdown.style.display = 'none';
+}
+
+// Dropdown logic
+const serverHeader = document.querySelector('.channels-server-header');
+const dropdownBtn = document.querySelector('.server-dropdown-btn');
+const dropdownMenu = document.querySelector('.server-dropdown-menu');
+function toggleDropdown(e) {
+  e.stopPropagation();
+  if (dropdownMenu) {
+    dropdownMenu.style.display = dropdownMenu.style.display === 'block' ? 'none' : 'block';
+  }
+}
+if (serverHeader) serverHeader.addEventListener('click', toggleDropdown);
+if (dropdownBtn) dropdownBtn.addEventListener('click', toggleDropdown);
+document.addEventListener('mousedown', (e) => {
+  if (dropdownMenu && !serverHeader.contains(e.target) && !dropdownMenu.contains(e.target)) {
+    dropdownMenu.style.display = 'none';
+  }
+});
+
+// Server selection logic
+window.selectedServer = null;
+function selectServer(server) {
+  window.selectedServer = server;
+  showServerHeader(server);
+  // TODO: fetch and render channels for this server
+  // TODO: update chat area for this server
+  // Hide friends header if visible
+  const channelsHeader = document.querySelector('.channels-header');
+  if (channelsHeader) channelsHeader.style.display = 'none';
+}
+
+// Hide server header in friends/DMs mode
+function enterFriendsMode() {
+  currentSidebarView = 'friends';
+  selectedFriendId = null;
+  document.querySelector('.friends-btn').classList.add('active');
+  fetchFriendsAndRequests().then(() => {
+    renderFriendsSidebar();
+    renderFriendsChat(null);
+    renderAddFriendModal();
+    hideServerHeader();
+    // Show channels header for friends
+    const channelsHeader = document.querySelector('.channels-header');
+    if (channelsHeader) channelsHeader.style.display = '';
+  });
+}
+function exitFriendsMode() {
+  currentSidebarView = 'servers';
+  selectedFriendId = null;
+  document.querySelector('.friends-btn').classList.remove('active');
+  // Restore channels sidebar (fetch and render channels for selected server)
+  const channelsHeader = document.querySelector('.channels-header');
+  channelsHeader.textContent = '# Channels';
+  channelsHeader.style.display = 'none';
+  const channelList = document.querySelector('.channel-list');
+  channelList.innerHTML = '<!-- Channels will be dynamically added here -->';
+  const addFriendBtn = document.querySelector('.add-friend-btn');
+  if (addFriendBtn) addFriendBtn.style.display = 'none';
+  // Restore main chat area (fetch and render messages for selected channel)
+  const channelTitle = document.querySelector('.channel-title');
+  channelTitle.textContent = '';
+  const messagesSection = document.querySelector('.messages');
+  messagesSection.innerHTML = '<!-- Messages will be dynamically added here -->';
+  const chatInput = document.querySelector('.chat-input');
+  chatInput.style.display = '';
+  // Show server header for selected server
+  if (window.selectedServer) showServerHeader(window.selectedServer);
 }
 
 // --- FRIENDS MODE STATE ---
@@ -1105,6 +1204,10 @@ document.addEventListener('DOMContentLoaded', function() {
       renderFriendsSidebar();
       renderFriendsChat(null);
       renderAddFriendModal();
+      hideServerHeader();
+      // Show channels header for friends
+      const channelsHeader = document.querySelector('.channels-header');
+      if (channelsHeader) channelsHeader.style.display = '';
     });
   }
 
@@ -1114,10 +1217,11 @@ document.addEventListener('DOMContentLoaded', function() {
     document.querySelector('.friends-btn').classList.remove('active');
     // Restore channels sidebar (fetch and render channels for selected server)
     const channelsHeader = document.querySelector('.channels-header');
-    const channelList = document.querySelector('.channel-list');
-    const addFriendBtn = document.querySelector('.add-friend-btn');
     channelsHeader.textContent = '# Channels';
+    channelsHeader.style.display = 'none';
+    const channelList = document.querySelector('.channel-list');
     channelList.innerHTML = '<!-- Channels will be dynamically added here -->';
+    const addFriendBtn = document.querySelector('.add-friend-btn');
     if (addFriendBtn) addFriendBtn.style.display = 'none';
     // Restore main chat area (fetch and render messages for selected channel)
     const channelTitle = document.querySelector('.channel-title');
@@ -1126,6 +1230,8 @@ document.addEventListener('DOMContentLoaded', function() {
     messagesSection.innerHTML = '<!-- Messages will be dynamically added here -->';
     const chatInput = document.querySelector('.chat-input');
     chatInput.style.display = '';
+    // Show server header for selected server
+    if (window.selectedServer) showServerHeader(window.selectedServer);
   }
 
   // --- Premium Chat Search Logic ---
