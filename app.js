@@ -5,6 +5,24 @@ const SUPABASE_URL = 'https://tmqwjmebyiqqgevsaquh.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRtcXdqbWVieWlxcWdldnNhcXVoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDk3Mzk2OTMsImV4cCI6MjA2NTMxNTY5M30.W_cxVD4is0GFUql8UqAafM8Tx8rSvP_aeLBDLpqjOuo';
 const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
+// --- INVITE CODE TOOLTIP LOGIC ---
+let inviteOption = null;
+let inviteTooltip = null;
+
+function updateInviteTooltip() {
+  if (!window.selectedServer || !window.selectedServer.invite_code) {
+    if (inviteTooltip) inviteTooltip.style.display = 'none';
+    return;
+  }
+  if (inviteTooltip) {
+    inviteTooltip.innerHTML =
+      `<span class="invite-code-text">${window.selectedServer.invite_code}</span>` +
+      `<span class="copy-icon" title="Copy">📋</span>`;
+    inviteTooltip.style.display = '';
+    inviteTooltip.classList.remove('copied');
+  }
+}
+
 // Fetch user profile
 async function fetchUserProfile(userId) {
   const { data, error } = await supabase
@@ -483,6 +501,26 @@ function formatTime(ts) {
 }
 
 document.addEventListener('DOMContentLoaded', function() {
+  inviteOption = document.querySelector('.invite-people-option');
+  inviteTooltip = document.querySelector('.invite-code-tooltip');
+  if (inviteOption && inviteTooltip) {
+    inviteOption.addEventListener('mouseenter', updateInviteTooltip);
+    inviteOption.addEventListener('focus', updateInviteTooltip);
+    inviteTooltip.addEventListener('click', function(e) {
+      if (e.target.classList.contains('copy-icon') || e.target.classList.contains('invite-code-text')) {
+        const code = window.selectedServer && window.selectedServer.invite_code;
+        if (code) {
+          navigator.clipboard.writeText(code);
+          inviteTooltip.classList.add('copied');
+          inviteTooltip.innerHTML = `<span class=\"invite-code-text\">${code}</span><span class=\"copy-icon\" title=\"Copy\">✅ Copied!</span>`;
+          setTimeout(() => {
+            inviteTooltip.classList.remove('copied');
+            updateInviteTooltip();
+          }, 1200);
+        }
+      }
+    });
+  }
   // Fetch servers list on page load
   fetchServers();
   const addServerBtn = document.querySelector('.add-server');
@@ -1514,41 +1552,4 @@ document.addEventListener('DOMContentLoaded', function() {
   }
 
   showWelcomeMessage();
-
-  // --- INVITE CODE TOOLTIP LOGIC ---
-  const inviteOption = document.querySelector('.invite-people-option');
-  const inviteTooltip = document.querySelector('.invite-code-tooltip');
-
-  function updateInviteTooltip() {
-    if (!window.selectedServer || !window.selectedServer.invite_code) {
-      if (inviteTooltip) inviteTooltip.style.display = 'none';
-      return;
-    }
-    if (inviteTooltip) {
-      inviteTooltip.innerHTML =
-        `<span class="invite-code-text">${window.selectedServer.invite_code}</span>` +
-        `<span class="copy-icon" title="Copy">📋</span>`;
-      inviteTooltip.style.display = '';
-      inviteTooltip.classList.remove('copied');
-    }
-  }
-
-  if (inviteOption && inviteTooltip) {
-    inviteOption.addEventListener('mouseenter', updateInviteTooltip);
-    inviteOption.addEventListener('focus', updateInviteTooltip);
-    inviteTooltip.addEventListener('click', function(e) {
-      if (e.target.classList.contains('copy-icon') || e.target.classList.contains('invite-code-text')) {
-        const code = window.selectedServer && window.selectedServer.invite_code;
-        if (code) {
-          navigator.clipboard.writeText(code);
-          inviteTooltip.classList.add('copied');
-          inviteTooltip.innerHTML = `<span class="invite-code-text">${code}</span><span class="copy-icon" title="Copy">✅ Copied!</span>`;
-          setTimeout(() => {
-            inviteTooltip.classList.remove('copied');
-            updateInviteTooltip();
-          }, 1200);
-        }
-      }
-    });
-  }
 }); 
