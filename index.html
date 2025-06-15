@@ -129,6 +129,7 @@
           <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="3" y="7" width="14" height="10" rx="2" stroke="currentColor" stroke-width="1.5"/><circle cx="10" cy="12" r="2.5" stroke="currentColor" stroke-width="1.5"/><rect x="7" y="3" width="6" height="2" rx="1" fill="currentColor"/></svg>
         </button>
         <button class="logout-account-btn">Logout</button>
+        <button class="join-server-btn">Join Server</button>
         <button class="delete-account-btn">Delete Account</button>
         <div class="delete-caution">⚠️ Deleting your account is permanent and cannot be undone.</div>
       </div>
@@ -155,6 +156,15 @@
         <button class="modal-back">Back</button>
         <button class="modal-create" disabled>Create</button>
       </div>
+    </div>
+  </div>
+  <div id="join-server-modal" class="modal" style="display:none;">
+    <div class="modal-content">
+      <button class="modal-close join-server-modal-close" title="Close">&times;</button>
+      <h2>Join a Server</h2>
+      <input type="text" class="join-server-input" placeholder="Enter invite code..." />
+      <button class="join-server-confirm-btn">Join</button>
+      <div class="join-server-error" style="color:#ff4d4f;margin-top:8px;min-height:20px;"></div>
     </div>
   </div>
   <div class="auth-overlay" id="auth-overlay">

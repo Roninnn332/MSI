@@ -464,6 +464,22 @@ body {
   background: var(--accent);
   color: var(--text);
 }
+.join-server-btn {
+  width: 100%;
+  background: var(--background-tertiary);
+  color: var(--accent);
+  border: none;
+  border-radius: 8px;
+  padding: 10px 0;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s;
+}
+.join-server-btn:hover {
+  background: var(--accent);
+  color: var(--text);
+}
 
 /* Responsive */
 @media (max-width: 1100px) {

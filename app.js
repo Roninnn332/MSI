@@ -1331,5 +1331,73 @@ document.addEventListener('DOMContentLoaded', function() {
     });
   }
 
+  // --- JOIN SERVER LOGIC ---
+  const joinServerBtn = document.querySelector('.join-server-btn');
+  const joinServerModal = document.getElementById('join-server-modal');
+  const joinServerModalClose = document.querySelector('.join-server-modal-close');
+  const joinServerInput = document.querySelector('.join-server-input');
+  const joinServerConfirmBtn = document.querySelector('.join-server-confirm-btn');
+  const joinServerError = document.querySelector('.join-server-error');
+
+  function openJoinServerModal() {
+    joinServerModal.style.display = 'flex';
+    setTimeout(() => joinServerModal.classList.add('modal-open'), 10);
+    joinServerInput.value = '';
+    joinServerError.textContent = '';
+    document.body.style.overflow = 'hidden';
+    joinServerInput.focus();
+  }
+  function closeJoinServerModal() {
+    joinServerModal.classList.remove('modal-open');
+    joinServerModal.classList.add('modal-closing');
+    setTimeout(() => {
+      joinServerModal.classList.remove('modal-closing');
+      joinServerModal.style.display = 'none';
+      document.body.style.overflow = '';
+    }, 350);
+  }
+  if (joinServerBtn) joinServerBtn.addEventListener('click', openJoinServerModal);
+  if (joinServerModalClose) joinServerModalClose.addEventListener('click', closeJoinServerModal);
+  joinServerConfirmBtn.addEventListener('click', async () => {
+    const code = joinServerInput.value.trim();
+    if (!code) return joinServerError.textContent = 'Please enter an invite code.';
+    joinServerConfirmBtn.disabled = true;
+    joinServerError.textContent = 'Joining...';
+    const userId = localStorage.getItem('user_id');
+    // 1. Find server by invite code
+    const { data: server, error } = await supabase
+      .from('servers')
+      .select('*')
+      .eq('invite_code', code)
+      .single();
+    if (error || !server) {
+      joinServerError.textContent = 'Invalid invite code.';
+      joinServerConfirmBtn.disabled = false;
+      return;
+    }
+    // 2. Add user to server_members
+    const { error: joinError } = await supabase
+      .from('server_members')
+      .insert([{ server_id: server.id, user_id: userId }]);
+    if (joinError) {
+      joinServerError.textContent = 'You are already a member or something went wrong.';
+      joinServerConfirmBtn.disabled = false;
+      return;
+    }
+    joinServerError.textContent = 'Joined! 🎉';
+    await fetchServers();
+    setTimeout(closeJoinServerModal, 900);
+    joinServerConfirmBtn.disabled = false;
+  });
+  // Modal close on Escape/outside click
+  if (joinServerModal) {
+    document.addEventListener('keydown', function(e) {
+      if (joinServerModal.style.display === 'flex' && e.key === 'Escape') closeJoinServerModal();
+    });
+    joinServerModal.addEventListener('mousedown', function(e) {
+      if (!joinServerModal.querySelector('.modal-content').contains(e.target)) closeJoinServerModal();
+    });
+  }
+
   showWelcomeMessage();
 }); 
