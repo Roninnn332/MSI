@@ -16,8 +16,8 @@ function updateInviteTooltip() {
   }
   if (inviteTooltip) {
     inviteTooltip.innerHTML =
-      `<span class="invite-code-text">${window.selectedServer.invite_code}</span>` +
-      `<span class="copy-icon" title="Copy">📋</span>`;
+      `<span class=\"invite-code-text\">${window.selectedServer.invite_code}</span>` +
+      `<span class=\"copy-icon\" title=\"Copy\">📋</span>`;
     inviteTooltip.style.display = '';
     inviteTooltip.classList.remove('copied');
   }
@@ -110,14 +110,24 @@ const dropdownMenu = document.querySelector('.server-dropdown-menu');
 function toggleDropdown(e) {
   e.stopPropagation();
   if (dropdownMenu) {
-    dropdownMenu.style.display = dropdownMenu.style.display === 'block' ? 'none' : 'block';
+    const isOpen = dropdownMenu.classList.contains('open');
+    if (isOpen) {
+      dropdownMenu.classList.remove('open');
+    } else {
+      dropdownMenu.classList.add('open');
+      // Position dropdown below header
+      const headerRect = serverHeader.getBoundingClientRect();
+      dropdownMenu.style.top = headerRect.height + 'px';
+      // Update invite tooltip in case server changed
+      updateInviteTooltip();
+    }
   }
 }
 if (serverHeader) serverHeader.addEventListener('click', toggleDropdown);
 if (dropdownBtn) dropdownBtn.addEventListener('click', toggleDropdown);
 document.addEventListener('mousedown', (e) => {
   if (dropdownMenu && !serverHeader.contains(e.target) && !dropdownMenu.contains(e.target)) {
-    dropdownMenu.style.display = 'none';
+    dropdownMenu.classList.remove('open');
   }
 });
 
@@ -504,8 +514,16 @@ document.addEventListener('DOMContentLoaded', function() {
   inviteOption = document.querySelector('.invite-people-option');
   inviteTooltip = document.querySelector('.invite-code-tooltip');
   if (inviteOption && inviteTooltip) {
-    inviteOption.addEventListener('mouseenter', updateInviteTooltip);
-    inviteOption.addEventListener('focus', updateInviteTooltip);
+    document.addEventListener('mouseover', function(e) {
+      if (inviteOption && inviteOption.contains(e.target)) {
+        updateInviteTooltip();
+      }
+    });
+    document.addEventListener('focusin', function(e) {
+      if (inviteOption && inviteOption.contains(e.target)) {
+        updateInviteTooltip();
+      }
+    });
     inviteTooltip.addEventListener('click', function(e) {
       if (e.target.classList.contains('copy-icon') || e.target.classList.contains('invite-code-text')) {
         const code = window.selectedServer && window.selectedServer.invite_code;

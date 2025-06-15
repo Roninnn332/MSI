@@ -2018,6 +2018,7 @@ body {
   padding: 12px 8px 8px 0;
   cursor: pointer;
   position: relative;
+  z-index: 2;
 }
 .server-dropdown-btn {
   background: none;
@@ -2034,15 +2035,24 @@ body {
 }
 .server-dropdown-menu {
   position: absolute;
-  top: 38px;
+  top: 100%;
   left: 0;
   background: var(--background-secondary);
   border-radius: 12px;
-  box-shadow: 0 4px 24px var(--shadow);
+  box-shadow: 0 8px 32px var(--shadow);
   min-width: 210px;
   z-index: 100;
   padding: 8px 0;
-  animation: fadeIn 0.2s;
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(-16px) scale(0.98);
+  transition: opacity 0.32s cubic-bezier(.4,0,.2,1), transform 0.32s cubic-bezier(.4,0,.2,1);
+  display: block;
+}
+.server-dropdown-menu.open {
+  opacity: 1;
+  pointer-events: auto;
+  transform: translateY(8px) scale(1.03);
 }
 .dropdown-option {
   padding: 10px 18px;
@@ -2082,7 +2092,7 @@ body {
   left: 120%;
   top: 50%;
   white-space: nowrap;
-  z-index: 10;
+  z-index: 200;
 }
 .invite-people-option:hover .invite-code-tooltip,
 .invite-people-option:focus-within .invite-code-tooltip {
