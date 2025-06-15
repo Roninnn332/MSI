@@ -25,7 +25,6 @@ function updateInviteTooltip() {
     }
     inviteTooltip.style.display = '';
     inviteTooltip.classList.remove('copied');
-    // Add event for generate button
     const genBtn = inviteTooltip.querySelector('.generate-invite-btn');
     if (genBtn) {
       genBtn.onclick = async function(e) {
@@ -33,7 +32,6 @@ function updateInviteTooltip() {
         genBtn.disabled = true;
         genBtn.textContent = 'Generating...';
         const newCode = generateInviteCode();
-        // Update in Supabase
         await supabase.from('servers').update({ invite_code: newCode }).eq('id', window.selectedServer.id);
         window.selectedServer.invite_code = newCode;
         updateInviteTooltip();
@@ -834,11 +832,13 @@ document.addEventListener('DOMContentLoaded', function() {
         createBtn.disabled = false;
         return;
       }
+      const inviteCode = generateInviteCode();
       const { data, error } = await supabase.from('servers').insert([
         {
           name: serverNameInput.value.trim(),
           icon_url: serverIconUrl,
           owner_id: ownerId,
+          invite_code: inviteCode
         }
       ]);
       if (error) throw error;
