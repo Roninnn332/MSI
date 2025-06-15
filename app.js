@@ -113,8 +113,10 @@ function toggleDropdown(e) {
     const isOpen = dropdownMenu.classList.contains('open');
     if (isOpen) {
       dropdownMenu.classList.remove('open');
+      dropdownMenu.style.display = 'none';
     } else {
       dropdownMenu.classList.add('open');
+      dropdownMenu.style.display = 'block';
       // Position dropdown below header
       const headerRect = serverHeader.getBoundingClientRect();
       dropdownMenu.style.top = headerRect.height + 'px';
@@ -128,6 +130,7 @@ if (dropdownBtn) dropdownBtn.addEventListener('click', toggleDropdown);
 document.addEventListener('mousedown', (e) => {
   if (dropdownMenu && !serverHeader.contains(e.target) && !dropdownMenu.contains(e.target)) {
     dropdownMenu.classList.remove('open');
+    dropdownMenu.style.display = 'none';
   }
 });
 
