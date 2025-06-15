@@ -2079,32 +2079,28 @@ body {
 }
 .invite-code-tooltip {
   position: absolute;
-  left: 110%;
-  top: 50%;
-  transform: translateY(-50%) scale(0.98);
-  display: inline-block;
-  background: var(--background-tertiary);
-  color: var(--accent);
+  left: 100%;
+  top: 0;
+  transform: none;
+  margin-left: 0px;
+  min-width: 180px;
+  box-shadow: 0 4px 24px 0 rgba(179,157,219,0.18), 0 1.5px 8px 0 rgba(0,0,0,0.12);
   border: 1.5px solid var(--accent);
   border-radius: 8px;
-  font-family: 'Fira Mono', 'Consolas', monospace;
-  font-size: 0.98rem;
-  padding: 4px 12px 4px 10px;
-  margin-left: 14px;
-  box-shadow: 0 2px 8px var(--shadow);
+  background: var(--background-tertiary);
+  padding: 8px 16px;
   opacity: 0;
   pointer-events: none;
-  transform: translateY(8px) scale(0.98);
-  transition: opacity 0.22s cubic-bezier(.4,0,.2,1), transform 0.22s cubic-bezier(.4,0,.2,1);
-  white-space: nowrap;
-  z-index: 200;
+  transition: opacity 0.22s cubic-bezier(.4,0,.2,1);
+  z-index: 300;
+  display: block;
 }
 .invite-people-option:hover .invite-code-tooltip,
-.invite-people-option:focus-within .invite-code-tooltip {
-  display: inline-block !important;
+.invite-people-option:focus-within .invite-code-tooltip,
+.invite-code-tooltip:hover,
+.invite-code-tooltip:focus-within {
   opacity: 1;
   pointer-events: auto;
-  transform: translateY(0) scale(1);
 }
 .invite-code-tooltip.copied {
   color: #7ed957;
@@ -2121,4 +2117,34 @@ body {
 }
 .invite-code-tooltip .copy-icon:hover {
   color: #7ed957;
+}
+
+.generate-invite-btn {
+  background: var(--accent);
+  color: var(--text);
+  border: none;
+  border-radius: 6px;
+  padding: 4px 14px;
+  font-size: 0.97rem;
+  font-weight: 500;
+  margin-left: 10px;
+  cursor: pointer;
+  box-shadow: 0 1.5px 6px var(--shadow);
+  transition: background 0.18s, color 0.18s, transform 0.18s;
+  outline: none;
+  vertical-align: middle;
+}
+.generate-invite-btn:hover:not(:disabled),
+.generate-invite-btn:focus-visible:not(:disabled) {
+  background: var(--accent-hover);
+  color: #fff;
+  transform: scale(1.06);
+}
+.generate-invite-btn:active {
+  background: #7e57c2;
+  color: #fff;
+}
+.generate-invite-btn:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
 } 
