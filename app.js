@@ -1521,14 +1521,16 @@ document.addEventListener('DOMContentLoaded', function() {
 
   function updateInviteTooltip() {
     if (!window.selectedServer || !window.selectedServer.invite_code) {
-      inviteTooltip.style.display = 'none';
+      if (inviteTooltip) inviteTooltip.style.display = 'none';
       return;
     }
-    inviteTooltip.innerHTML =
-      `<span class="invite-code-text">${window.selectedServer.invite_code}</span>` +
-      `<span class="copy-icon" title="Copy">📋</span>`;
-    inviteTooltip.style.display = '';
-    inviteTooltip.classList.remove('copied');
+    if (inviteTooltip) {
+      inviteTooltip.innerHTML =
+        `<span class="invite-code-text">${window.selectedServer.invite_code}</span>` +
+        `<span class="copy-icon" title="Copy">📋</span>`;
+      inviteTooltip.style.display = '';
+      inviteTooltip.classList.remove('copied');
+    }
   }
 
   if (inviteOption && inviteTooltip) {
