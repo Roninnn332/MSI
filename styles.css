@@ -2061,4 +2061,49 @@ body {
   height: 1px;
   background: var(--border);
   margin: 6px 0;
+}
+
+.invite-code-tooltip {
+  display: inline-block;
+  background: var(--background-tertiary);
+  color: var(--accent);
+  border: 1.5px solid var(--accent);
+  border-radius: 8px;
+  font-family: 'Fira Mono', 'Consolas', monospace;
+  font-size: 0.98rem;
+  padding: 4px 12px 4px 10px;
+  margin-left: 14px;
+  box-shadow: 0 2px 8px var(--shadow);
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(8px) scale(0.98);
+  transition: opacity 0.22s cubic-bezier(.4,0,.2,1), transform 0.22s cubic-bezier(.4,0,.2,1);
+  position: absolute;
+  left: 120%;
+  top: 50%;
+  white-space: nowrap;
+  z-index: 10;
+}
+.invite-people-option:hover .invite-code-tooltip,
+.invite-people-option:focus-within .invite-code-tooltip {
+  display: inline-block;
+  opacity: 1;
+  pointer-events: auto;
+  transform: translateY(0) scale(1);
+}
+.invite-code-tooltip.copied {
+  color: #7ed957;
+  border-color: #7ed957;
+  background: #232129;
+}
+.invite-code-tooltip .copy-icon {
+  margin-left: 8px;
+  cursor: pointer;
+  color: var(--accent);
+  font-size: 1.08em;
+  vertical-align: middle;
+  transition: color 0.18s;
+}
+.invite-code-tooltip .copy-icon:hover {
+  color: #7ed957;
 } 

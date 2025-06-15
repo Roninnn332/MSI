@@ -108,6 +108,7 @@ window.selectedServer = null;
 function selectServer(server) {
   window.selectedServer = server;
   showServerHeader(server);
+  if (inviteTooltip) inviteTooltip.style.display = 'none';
   // TODO: fetch and render channels for this server
   // TODO: update chat area for this server
   // Hide friends header if visible
@@ -1513,4 +1514,39 @@ document.addEventListener('DOMContentLoaded', function() {
   }
 
   showWelcomeMessage();
+
+  // --- INVITE CODE TOOLTIP LOGIC ---
+  const inviteOption = document.querySelector('.invite-people-option');
+  const inviteTooltip = document.querySelector('.invite-code-tooltip');
+
+  function updateInviteTooltip() {
+    if (!window.selectedServer || !window.selectedServer.invite_code) {
+      inviteTooltip.style.display = 'none';
+      return;
+    }
+    inviteTooltip.innerHTML =
+      `<span class="invite-code-text">${window.selectedServer.invite_code}</span>` +
+      `<span class="copy-icon" title="Copy">📋</span>`;
+    inviteTooltip.style.display = '';
+    inviteTooltip.classList.remove('copied');
+  }
+
+  if (inviteOption && inviteTooltip) {
+    inviteOption.addEventListener('mouseenter', updateInviteTooltip);
+    inviteOption.addEventListener('focus', updateInviteTooltip);
+    inviteTooltip.addEventListener('click', function(e) {
+      if (e.target.classList.contains('copy-icon') || e.target.classList.contains('invite-code-text')) {
+        const code = window.selectedServer && window.selectedServer.invite_code;
+        if (code) {
+          navigator.clipboard.writeText(code);
+          inviteTooltip.classList.add('copied');
+          inviteTooltip.innerHTML = `<span class="invite-code-text">${code}</span><span class="copy-icon" title="Copy">✅ Copied!</span>`;
+          setTimeout(() => {
+            inviteTooltip.classList.remove('copied');
+            updateInviteTooltip();
+          }, 1200);
+        }
+      }
+    });
+  }
 }); 
