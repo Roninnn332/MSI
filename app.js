@@ -10,14 +10,19 @@ let inviteOption = null;
 let inviteTooltip = null;
 
 function updateInviteTooltip() {
-  if (!window.selectedServer || !window.selectedServer.invite_code) {
+  if (!window.selectedServer) {
     if (inviteTooltip) inviteTooltip.style.display = 'none';
     return;
   }
   if (inviteTooltip) {
-    inviteTooltip.innerHTML =
-      `<span class=\"invite-code-text\">${window.selectedServer.invite_code}</span>` +
-      `<span class=\"copy-icon\" title=\"Copy\">📋</span>`;
+    let code = window.selectedServer.invite_code;
+    if (!code) {
+      inviteTooltip.innerHTML = `<span class=\"invite-code-text\" style=\"color:#ffb84d;\">No invite code set</span>`;
+    } else {
+      inviteTooltip.innerHTML =
+        `<span class=\"invite-code-text\">${code}</span>` +
+        `<span class=\"copy-icon\" title=\"Copy\">📋</span>`;
+    }
     inviteTooltip.style.display = '';
     inviteTooltip.classList.remove('copied');
   }

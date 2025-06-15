@@ -2019,6 +2019,7 @@ body {
   cursor: pointer;
   position: relative;
   z-index: 2;
+  margin-top: -20px;
 }
 .server-dropdown-btn {
   background: none;
@@ -2096,7 +2097,7 @@ body {
 }
 .invite-people-option:hover .invite-code-tooltip,
 .invite-people-option:focus-within .invite-code-tooltip {
-  display: inline-block;
+  display: inline-block !important;
   opacity: 1;
   pointer-events: auto;
   transform: translateY(0) scale(1);
