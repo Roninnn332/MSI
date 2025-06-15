@@ -753,6 +753,13 @@ document.addEventListener('DOMContentLoaded', function() {
         }
       ]);
       if (error) throw error;
+      const newServer = data && data[0];
+      if (newServer) {
+        // Add creator as a member
+        await supabase.from('server_members').insert([
+          { server_id: newServer.id, user_id: ownerId }
+        ]);
+      }
       // Hide modal and all options
       closeModal();
       // Show new minimal success feedback
