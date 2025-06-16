@@ -25,34 +25,15 @@
     </nav>
     <!-- Channel List -->
     <aside class="channels">
-      <div class="channels-server-header" style="display:none;">
-        <span class="server-owner-name"></span>
-        <button class="server-dropdown-btn" aria-label="Server options">
-          <svg width="18" height="18" viewBox="0 0 20 20" fill="none">
-            <path d="M5 8l5 5 5-5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-          </svg>
-        </button>
+      <div class="channels-server-header" style="display:none;"></div>
+      <div class="server-channels-section">
+        <ul class="server-channel-list"><!-- Server channels go here --></ul>
       </div>
-      <div class="server-dropdown-menu" style="display:none;">
-        <div class="dropdown-option invite-people-option"><span>Invite People</span>
-          <span class="invite-code-tooltip" style="display:none;"></span>
-        </div>
-        <div class="dropdown-option"><span>Server Settings</span></div>
-        <div class="dropdown-option"><span>Create Channel</span></div>
-        <div class="dropdown-option"><span>Create Category</span></div>
-        <div class="dropdown-option"><span>Create Event</span></div>
-        <div class="dropdown-option"><span>App Directory</span></div>
-        <div class="dropdown-divider"></div>
-        <div class="dropdown-option"><span>Notification Settings</span></div>
-        <div class="dropdown-option"><span>Privacy Settings</span></div>
-        <div class="dropdown-option"><span>Edit Per-server Profile</span></div>
-        <div class="dropdown-option"><span>Hide Muted Channels</span></div>
+      <div class="friends-section" style="display:none;">
+        <ul class="friends-list"><!-- Friends go here --></ul>
+        <button type="button" class="add-friend-btn" style="display:none;">+ Add Friend</button>
       </div>
       <div class="channels-header"># Channels</div>
-      <ul class="channel-list">
-        <!-- Channels will be dynamically added here -->
-      </ul>
-      <button type="button" class="add-friend-btn" style="display:none;">+ Add Friend</button>
     </aside>
     <!-- Main Chat Area -->
     <main class="chat">
