@@ -844,10 +844,13 @@ document.addEventListener('DOMContentLoaded', function() {
       if (error) throw error;
       const newServer = data && data[0];
       if (newServer) {
-        // Add creator as a member
-        await supabase.from('server_members').insert([
+        const { error: memberError } = await supabase.from('server_members').insert([
           { server_id: newServer.id, user_id: ownerId }
         ]);
+        if (memberError) {
+          console.error('Failed to add creator as server member:', memberError.message);
+          alert('Failed to add you as a server member: ' + memberError.message);
+        }
       }
       // Hide modal and all options
       closeModal();
