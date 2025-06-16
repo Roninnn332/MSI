@@ -23,7 +23,7 @@ function updateInviteTooltip() {
         `<span class=\"invite-code-text\">${code}</span>` +
         `<span class=\"copy-icon\" title=\"Copy\">📋</span>`;
     }
-    inviteTooltip.style.display = 'block';
+    inviteTooltip.style.display = '';
     inviteTooltip.classList.remove('copied');
     const genBtn = inviteTooltip.querySelector('.generate-invite-btn');
     if (genBtn) {
@@ -37,23 +37,6 @@ function updateInviteTooltip() {
         updateInviteTooltip();
       };
     }
-    // Attach copy handler directly to the new elements
-    const copyTargets = inviteTooltip.querySelectorAll('.copy-icon, .invite-code-text');
-    copyTargets.forEach(el => {
-      el.onclick = function(e) {
-        e.stopPropagation();
-        const code = window.selectedServer && window.selectedServer.invite_code;
-        if (code) {
-          navigator.clipboard.writeText(code);
-          inviteTooltip.classList.add('copied');
-          inviteTooltip.innerHTML = `<span class=\"invite-code-text\">${code}</span><span class=\"copy-icon\" title=\"Copy\">✅ Copied!</span>`;
-          setTimeout(() => {
-            inviteTooltip.classList.remove('copied');
-            updateInviteTooltip();
-          }, 1200);
-        }
-      };
-    });
   }
 }
 
@@ -184,12 +167,6 @@ function selectServer(server) {
   window.selectedServer = server;
   showServerHeader(server);
   if (inviteTooltip) inviteTooltip.style.display = 'none';
-  // Show server channels, hide friends section
-  document.querySelector('.server-channels-section').style.display = '';
-  document.querySelector('.friends-section').style.display = 'none';
-  // Clear server channel list
-  const serverChannelList = document.querySelector('.server-channel-list');
-  if (serverChannelList) serverChannelList.innerHTML = '<!-- Server channels will be dynamically added here -->';
   // TODO: fetch and render channels for this server
   // TODO: update chat area for this server
   // Hide friends header if visible
@@ -202,17 +179,16 @@ function enterFriendsMode() {
   currentSidebarView = 'friends';
   selectedFriendId = null;
   document.querySelector('.friends-btn').classList.add('active');
-  // Show friends section, hide server channels
-  document.querySelector('.server-channels-section').style.display = 'none';
-  document.querySelector('.friends-section').style.display = '';
-  // Clear and render friends list
-  const friendsList = document.querySelector('.friends-list');
-  friendsList.innerHTML = '';
+  // --- Hide server list/sidebar ---
+  const serverList = document.querySelector('.server-list');
+  if (serverList) serverList.style.display = 'none';
+  // --- Hide server header and dropdown ---
+  hideServerHeader();
+  // --- Show only friends UI ---
   fetchFriendsAndRequests().then(() => {
     renderFriendsSidebar();
     renderFriendsChat(null);
     renderAddFriendModal();
-    hideServerHeader();
     // Show channels header for friends
     const channelsHeader = document.querySelector('.channels-header');
     if (channelsHeader) channelsHeader.style.display = '';
@@ -222,23 +198,24 @@ function exitFriendsMode() {
   currentSidebarView = 'servers';
   selectedFriendId = null;
   document.querySelector('.friends-btn').classList.remove('active');
-  // Show server channels, hide friends section
-  document.querySelector('.server-channels-section').style.display = '';
-  document.querySelector('.friends-section').style.display = 'none';
-  // Clear server channel list
-  const serverChannelList = document.querySelector('.server-channel-list');
-  serverChannelList.innerHTML = '<!-- Server channels will be dynamically added here -->';
+  // --- Show server list/sidebar ---
+  const serverList = document.querySelector('.server-list');
+  if (serverList) serverList.style.display = '';
+  // --- Hide friends list and friends UI ---
+  const channelList = document.querySelector('.channel-list');
+  if (channelList) channelList.innerHTML = '<!-- Channels will be dynamically added here -->';
+  const addFriendBtn = document.querySelector('.add-friend-btn');
+  if (addFriendBtn) addFriendBtn.style.display = 'none';
   // Restore channels sidebar (fetch and render channels for selected server)
   const channelsHeader = document.querySelector('.channels-header');
   channelsHeader.textContent = '# Channels';
   channelsHeader.style.display = 'none';
-  // Restore main chat area (fetch and render messages for selected channel)
   const channelTitle = document.querySelector('.channel-title');
-  channelTitle.textContent = '';
+  if (channelTitle) channelTitle.textContent = '';
   const messagesSection = document.querySelector('.messages');
-  messagesSection.innerHTML = '<!-- Messages will be dynamically added here -->';
+  if (messagesSection) messagesSection.innerHTML = '<!-- Messages will be dynamically added here -->';
   const chatInput = document.querySelector('.chat-input');
-  chatInput.style.display = '';
+  if (chatInput) chatInput.style.display = '';
   // Show server header for selected server
   if (window.selectedServer) showServerHeader(window.selectedServer);
 }
@@ -294,17 +271,17 @@ async function fetchFriendsAndRequests() {
 
 function renderFriendsSidebar() {
   const channelsHeader = document.querySelector('.channels-header');
-  const friendsList = document.querySelector('.friends-list');
-  const addFriendBtn = document.querySelector('.friends-section .add-friend-btn');
+  const channelList = document.querySelector('.channel-list');
+  const addFriendBtn = document.querySelector('.add-friend-btn');
   channelsHeader.textContent = 'Friends';
-  friendsList.innerHTML = '';
+  channelList.innerHTML = '';
   if (addFriendBtn) addFriendBtn.style.display = 'block';
   if (friends.length === 0) {
     const li = document.createElement('li');
     li.textContent = 'No friends yet';
     li.style.color = 'var(--text-secondary)';
     li.style.fontStyle = 'italic';
-    friendsList.appendChild(li);
+    channelList.appendChild(li);
     return;
   }
   friends.forEach(friend => {
@@ -328,7 +305,7 @@ function renderFriendsSidebar() {
       document.querySelectorAll('.friend-list-item').forEach(el => el.classList.remove('active'));
       li.classList.add('active');
     };
-    friendsList.appendChild(li);
+    channelList.appendChild(li);
   });
 }
 
@@ -1324,6 +1301,316 @@ document.addEventListener('DOMContentLoaded', function() {
       renderAddFriendModal();
     }
   }, 3000);
+
+  // Update on entering friends mode
+  function enterFriendsMode() {
+    currentSidebarView = 'friends';
+    selectedFriendId = null;
+    document.querySelector('.friends-btn').classList.add('active');
+    fetchFriendsAndRequests().then(() => {
+      renderFriendsSidebar();
+      renderFriendsChat(null);
+      renderAddFriendModal();
+      hideServerHeader();
+      // Show channels header for friends
+      const channelsHeader = document.querySelector('.channels-header');
+      if (channelsHeader) channelsHeader.style.display = '';
+    });
+  }
+
+  function exitFriendsMode() {
+    currentSidebarView = 'servers';
+    selectedFriendId = null;
+    document.querySelector('.friends-btn').classList.remove('active');
+    // Restore channels sidebar (fetch and render channels for selected server)
+    const channelsHeader = document.querySelector('.channels-header');
+    channelsHeader.textContent = '# Channels';
+    channelsHeader.style.display = 'none';
+    const channelList = document.querySelector('.channel-list');
+    channelList.innerHTML = '<!-- Channels will be dynamically added here -->';
+    const addFriendBtn = document.querySelector('.add-friend-btn');
+    if (addFriendBtn) addFriendBtn.style.display = 'none';
+    // Restore main chat area (fetch and render messages for selected channel)
+    const channelTitle = document.querySelector('.channel-title');
+    channelTitle.textContent = '';
+    const messagesSection = document.querySelector('.messages');
+    messagesSection.innerHTML = '<!-- Messages will be dynamically added here -->';
+    const chatInput = document.querySelector('.chat-input');
+    chatInput.style.display = '';
+    // Show server header for selected server
+    if (window.selectedServer) showServerHeader(window.selectedServer);
+  }
+
+  // --- Premium Chat Search Logic ---
+  const searchBtn = document.querySelector('.search-btn');
+  const searchBar = document.querySelector('.search-bar-container');
+  const searchInput = document.querySelector('.search-bar-input');
+  const searchClose = document.querySelector('.search-bar-close');
+  const arrowUp = document.querySelector('.search-bar-arrow-up');
+  const arrowDown = document.querySelector('.search-bar-arrow-down');
+  let matches = [];
+  let currentMatch = 0;
+
+  function clearHighlights() {
+    document.querySelectorAll('.search-highlight').forEach(el => {
+      el.classList.remove('search-highlight');
+    });
+  }
+
+  function updateHighlights(query) {
+    clearHighlights();
+    matches = [];
+    if (!query) return;
+    const bubbles = document.querySelectorAll('.dm-message-bubble');
+    bubbles.forEach((bubble, idx) => {
+      const text = bubble.textContent || '';
+      if (text.toLowerCase().includes(query.toLowerCase())) {
+        bubble.classList.add('search-highlight');
+        matches.push(bubble);
+      }
+    });
+    if (matches.length > 0) {
+      currentMatch = 0;
+      scrollToMatch(currentMatch);
+    }
+  }
+
+  function scrollToMatch(idx) {
+    if (!matches.length) return;
+    matches.forEach((el, i) => {
+      el.classList.toggle('search-highlight-active', i === idx);
+    });
+    const el = matches[idx];
+    if (el) {
+      el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+  }
+
+  if (searchBtn && searchBar && searchInput && searchClose) {
+    searchBtn.addEventListener('click', () => {
+      searchBar.style.display = 'flex';
+      setTimeout(() => searchBar.classList.add('active'), 10);
+      searchBtn.style.display = 'none';
+      searchInput.value = '';
+      searchInput.focus();
+      clearHighlights();
+    });
+    searchClose.addEventListener('click', () => {
+      searchBar.classList.remove('active');
+      setTimeout(() => { searchBar.style.display = 'none'; }, 300);
+      searchBtn.style.display = '';
+      searchInput.value = '';
+      clearHighlights();
+    });
+    searchInput.addEventListener('input', (e) => {
+      updateHighlights(e.target.value);
+    });
+    arrowDown.addEventListener('click', () => {
+      if (!matches.length) return;
+      currentMatch = (currentMatch + 1) % matches.length;
+      scrollToMatch(currentMatch);
+    });
+    arrowUp.addEventListener('click', () => {
+      if (!matches.length) return;
+      currentMatch = (currentMatch - 1 + matches.length) % matches.length;
+      scrollToMatch(currentMatch);
+    });
+    searchInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' && matches.length) {
+        arrowDown.click();
+        e.preventDefault();
+      }
+    });
+  }
+
+  // --- Chat File Attachment Logic ---
+  const attachBtn = document.querySelector('.chat-attach-btn');
+  const fileInput = document.querySelector('.chat-file-input');
+  const chatInputForm = document.querySelector('.chat-input');
+  let attachedFile = null;
+  let filePreviewEl = null;
+  let isUploading = false;
+
+  function showFilePreview(file) {
+    removeFilePreview();
+    filePreviewEl = document.createElement('div');
+    filePreviewEl.className = 'chat-file-preview';
+    let preview = '';
+    if (file.type.startsWith('image/')) {
+      preview = `<img src="${URL.createObjectURL(file)}" style="max-width:80px;max-height:80px;border-radius:8px;box-shadow:0 2px 8px var(--shadow);margin-right:8px;" />`;
+    } else if (file.type.startsWith('video/')) {
+      preview = `<video src="${URL.createObjectURL(file)}" style="max-width:80px;max-height:80px;border-radius:8px;box-shadow:0 2px 8px var(--shadow);margin-right:8px;" controls></video>`;
+    } else if (file.type.startsWith('audio/')) {
+      preview = `<audio src="${URL.createObjectURL(file)}" controls style="margin-right:8px;"></audio>`;
+    } else {
+      preview = `<span style="color:var(--accent);font-weight:600;">${file.name}</span>`;
+    }
+    filePreviewEl.innerHTML = `
+      <div style="display:flex;align-items:center;gap:8px;">
+        ${preview}
+        <button type="button" class="chat-file-remove icon-btn" title="Remove file" style="background:var(--background-tertiary);color:var(--accent);border-radius:50%;width:28px;height:28px;display:flex;align-items:center;justify-content:center;font-size:1.1rem;cursor:pointer;"><svg width="16" height="16" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="6" y1="6" x2="14" y2="14"/><line x1="14" y1="6" x2="6" y2="14"/></svg></button>
+      </div>
+    `;
+    chatInputForm.parentNode.insertBefore(filePreviewEl, chatInputForm);
+    filePreviewEl.querySelector('.chat-file-remove').onclick = removeFilePreview;
+  }
+  function removeFilePreview() {
+    if (filePreviewEl) filePreviewEl.remove();
+    filePreviewEl = null;
+    attachedFile = null;
+    if (fileInput) fileInput.value = '';
+  }
+  if (attachBtn && fileInput) {
+    attachBtn.addEventListener('click', () => fileInput.click());
+    fileInput.addEventListener('change', (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+      if (file.size > 50 * 1024 * 1024) {
+        showChatError('File too large (max 50MB)');
+        fileInput.value = '';
+        return;
+      }
+      attachedFile = file;
+      showFilePreview(file);
+    });
+  }
+  function showChatError(msg) {
+    let err = document.querySelector('.chat-file-error');
+    if (!err) {
+      err = document.createElement('div');
+      err.className = 'chat-file-error';
+      err.style.cssText = 'color:#fff;background:#d32f2f;padding:7px 16px;border-radius:8px;font-size:1rem;position:absolute;bottom:70px;left:50%;transform:translateX(-50%);z-index:100;box-shadow:0 2px 8px #d32f2f;animation:fadeIn 0.4s;';
+      document.body.appendChild(err);
+    }
+    err.textContent = msg;
+    err.style.display = 'block';
+    setTimeout(() => { err.style.display = 'none'; }, 1800);
+  }
+
+  // --- Upload and Send Logic ---
+  async function uploadFileAndSend(content) {
+    if (!attachedFile) {
+      sendDmMessage(content);
+      return;
+    }
+    isUploading = true;
+    setSendButtonLoading(true);
+    try {
+      let fileUrl = '';
+      let fileType = '';
+      let fileName = attachedFile.name;
+      if (attachedFile.type.startsWith('image/')) {
+        fileType = 'image';
+        fileUrl = await uploadToCloudinary(attachedFile, 'image');
+      } else if (attachedFile.type.startsWith('video/')) {
+        fileType = 'video';
+        fileUrl = await uploadToCloudinary(attachedFile, 'video');
+      } else if (attachedFile.type.startsWith('audio/')) {
+        fileType = 'audio';
+        fileUrl = await uploadToCloudinary(attachedFile, 'raw');
+      } else {
+        fileType = 'document';
+        fileUrl = await uploadToCloudinary(attachedFile, 'raw');
+      }
+      sendDmMessage(content, fileUrl, fileType, fileName);
+    } catch (err) {
+      showChatError('Upload failed. Try again.');
+    } finally {
+      isUploading = false;
+      setSendButtonLoading(false);
+      removeFilePreview();
+    }
+  }
+  function setSendButtonLoading(loading) {
+    const sendBtn = chatInputForm.querySelector('button[type="submit"]');
+    if (!sendBtn) return;
+    if (loading) {
+      sendBtn.disabled = true;
+      sendBtn.innerHTML = '<span class="spinner" style="width:20px;height:20px;border-width:3px;"></span>';
+    } else {
+      sendBtn.disabled = false;
+      sendBtn.textContent = 'Send';
+    }
+  }
+  if (chatInputForm) {
+    chatInputForm.addEventListener('submit', async function(e) {
+      e.preventDefault();
+      if (isUploading) return;
+      const input = chatInputForm.querySelector('input[type="text"]');
+      const content = input.value;
+      await uploadFileAndSend(content);
+      input.value = '';
+      input.focus();
+    });
+  }
+
+  // --- JOIN SERVER LOGIC ---
+  const joinServerBtn = document.querySelector('.join-server-btn');
+  const joinServerModal = document.getElementById('join-server-modal');
+  const joinServerModalClose = document.querySelector('.join-server-modal-close');
+  const joinServerInput = document.querySelector('.join-server-input');
+  const joinServerConfirmBtn = document.querySelector('.join-server-confirm-btn');
+  const joinServerError = document.querySelector('.join-server-error');
+
+  function openJoinServerModal() {
+    joinServerModal.style.display = 'flex';
+    setTimeout(() => joinServerModal.classList.add('modal-open'), 10);
+    joinServerInput.value = '';
+    joinServerError.textContent = '';
+    document.body.style.overflow = 'hidden';
+    joinServerInput.focus();
+  }
+  function closeJoinServerModal() {
+    joinServerModal.classList.remove('modal-open');
+    joinServerModal.classList.add('modal-closing');
+    setTimeout(() => {
+      joinServerModal.classList.remove('modal-closing');
+      joinServerModal.style.display = 'none';
+      document.body.style.overflow = '';
+    }, 350);
+  }
+  if (joinServerBtn) joinServerBtn.addEventListener('click', openJoinServerModal);
+  if (joinServerModalClose) joinServerModalClose.addEventListener('click', closeJoinServerModal);
+  joinServerConfirmBtn.addEventListener('click', async () => {
+    const code = joinServerInput.value.trim();
+    if (!code) return joinServerError.textContent = 'Please enter an invite code.';
+    joinServerConfirmBtn.disabled = true;
+    joinServerError.textContent = 'Joining...';
+    const userId = localStorage.getItem('user_id');
+    // 1. Find server by invite code
+    const { data: server, error } = await supabase
+      .from('servers')
+      .select('*')
+      .eq('invite_code', code)
+      .single();
+    if (error || !server) {
+      joinServerError.textContent = 'Invalid invite code.';
+      joinServerConfirmBtn.disabled = false;
+      return;
+    }
+    // 2. Add user to server_members
+    const { error: joinError } = await supabase
+      .from('server_members')
+      .insert([{ server_id: server.id, user_id: userId }]);
+    if (joinError) {
+      joinServerError.textContent = 'You are already a member or something went wrong.';
+      joinServerConfirmBtn.disabled = false;
+      return;
+    }
+    joinServerError.textContent = 'Joined! 🎉';
+    await fetchServers();
+    setTimeout(closeJoinServerModal, 900);
+    joinServerConfirmBtn.disabled = false;
+  });
+  // Modal close on Escape/outside click
+  if (joinServerModal) {
+    document.addEventListener('keydown', function(e) {
+      if (joinServerModal.style.display === 'flex' && e.key === 'Escape') closeJoinServerModal();
+    });
+    joinServerModal.addEventListener('mousedown', function(e) {
+      if (!joinServerModal.querySelector('.modal-content').contains(e.target)) closeJoinServerModal();
+    });
+  }
 
   showWelcomeMessage();
 }); 

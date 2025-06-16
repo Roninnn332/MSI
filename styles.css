@@ -1547,7 +1547,9 @@ body {
   box-shadow: none;
   letter-spacing: 0.02em;
   text-align: center;
-  position: static;
+  position: absolute;
+  left: 0;
+  bottom: 0;
   transition: color 0.2s;
 }
 .add-friend-btn:hover {
@@ -2145,50 +2147,4 @@ body {
 .generate-invite-btn:disabled {
   opacity: 0.7;
   cursor: not-allowed;
-}
-
-.server-channels-section {
-  width: 100%;
-}
-.server-channel-list {
-  list-style: none;
-  padding: 0;
-  margin: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-.friends-section {
-  width: 100%;
-  display: none;
-  flex-direction: column;
-}
-.friends-list {
-  list-style: none;
-  padding: 0;
-  margin: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-.friends-section .add-friend-btn {
-  background: none;
-  border: none;
-  color: var(--accent);
-  font-size: 1.08rem;
-  font-weight: 700;
-  cursor: pointer;
-  width: 100%;
-  padding: 0 0 18px 0;
-  margin: 0;
-  border-radius: 0;
-  box-shadow: none;
-  letter-spacing: 0.02em;
-  text-align: center;
-  position: static;
-  transition: color 0.2s;
-}
-.friends-section .add-friend-btn:hover {
-  color: var(--accent-hover);
-  text-decoration: underline;
 } 
