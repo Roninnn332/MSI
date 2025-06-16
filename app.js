@@ -167,11 +167,22 @@ function selectServer(server) {
   window.selectedServer = server;
   showServerHeader(server);
   if (inviteTooltip) inviteTooltip.style.display = 'none';
-  // TODO: fetch and render channels for this server
-  // TODO: update chat area for this server
+
   // Hide friends header if visible
   const channelsHeader = document.querySelector('.channels-header');
   if (channelsHeader) channelsHeader.style.display = 'none';
+
+  // --- FIX: Clear the channel-list and hide add-friend-btn ---
+  const channelList = document.querySelector('.channel-list');
+  if (channelList) {
+    channelList.innerHTML = '';
+    channelList.style.display = '';
+  }
+  const addFriendBtn = document.querySelector('.add-friend-btn');
+  if (addFriendBtn) addFriendBtn.style.display = 'none';
+
+  // TODO: fetch and render channels for this server
+  // TODO: update chat area for this server
 }
 
 // Hide server header in friends/DMs mode
