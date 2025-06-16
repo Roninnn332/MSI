@@ -37,6 +37,23 @@ function updateInviteTooltip() {
         updateInviteTooltip();
       };
     }
+    // Attach copy handler directly to the new elements
+    const copyTargets = inviteTooltip.querySelectorAll('.copy-icon, .invite-code-text');
+    copyTargets.forEach(el => {
+      el.onclick = function(e) {
+        e.stopPropagation();
+        const code = window.selectedServer && window.selectedServer.invite_code;
+        if (code) {
+          navigator.clipboard.writeText(code);
+          inviteTooltip.classList.add('copied');
+          inviteTooltip.innerHTML = `<span class=\"invite-code-text\">${code}</span><span class=\"copy-icon\" title=\"Copy\">✅ Copied!</span>`;
+          setTimeout(() => {
+            inviteTooltip.classList.remove('copied');
+            updateInviteTooltip();
+          }, 1200);
+        }
+      };
+    });
   }
 }
 
@@ -167,6 +184,9 @@ function selectServer(server) {
   window.selectedServer = server;
   showServerHeader(server);
   if (inviteTooltip) inviteTooltip.style.display = 'none';
+  // Clear the channel list when switching to a server
+  const channelList = document.querySelector('.channel-list');
+  if (channelList) channelList.innerHTML = '<!-- Channels will be dynamically added here -->';
   // TODO: fetch and render channels for this server
   // TODO: update chat area for this server
   // Hide friends header if visible
