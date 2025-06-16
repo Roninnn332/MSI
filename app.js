@@ -23,7 +23,7 @@ function updateInviteTooltip() {
         `<span class=\"invite-code-text\">${code}</span>` +
         `<span class=\"copy-icon\" title=\"Copy\">📋</span>`;
     }
-    inviteTooltip.style.display = '';
+    inviteTooltip.style.display = 'block';
     inviteTooltip.classList.remove('copied');
     const genBtn = inviteTooltip.querySelector('.generate-invite-btn');
     if (genBtn) {
@@ -179,6 +179,11 @@ function enterFriendsMode() {
   currentSidebarView = 'friends';
   selectedFriendId = null;
   document.querySelector('.friends-btn').classList.add('active');
+  // Hide server channels when in friends mode
+  const channelList = document.querySelector('.channel-list');
+  if (channelList) channelList.style.display = '';
+  const addFriendBtn = document.querySelector('.add-friend-btn');
+  if (addFriendBtn) addFriendBtn.style.display = 'block';
   fetchFriendsAndRequests().then(() => {
     renderFriendsSidebar();
     renderFriendsChat(null);
@@ -193,14 +198,16 @@ function exitFriendsMode() {
   currentSidebarView = 'servers';
   selectedFriendId = null;
   document.querySelector('.friends-btn').classList.remove('active');
+  // Show server channels, hide add friend button
+  const channelList = document.querySelector('.channel-list');
+  if (channelList) channelList.style.display = '';
+  const addFriendBtn = document.querySelector('.add-friend-btn');
+  if (addFriendBtn) addFriendBtn.style.display = 'none';
   // Restore channels sidebar (fetch and render channels for selected server)
   const channelsHeader = document.querySelector('.channels-header');
   channelsHeader.textContent = '# Channels';
   channelsHeader.style.display = 'none';
-  const channelList = document.querySelector('.channel-list');
   channelList.innerHTML = '<!-- Channels will be dynamically added here -->';
-  const addFriendBtn = document.querySelector('.add-friend-btn');
-  if (addFriendBtn) addFriendBtn.style.display = 'none';
   // Restore main chat area (fetch and render messages for selected channel)
   const channelTitle = document.querySelector('.channel-title');
   channelTitle.textContent = '';
@@ -1299,6 +1306,11 @@ document.addEventListener('DOMContentLoaded', function() {
     currentSidebarView = 'friends';
     selectedFriendId = null;
     document.querySelector('.friends-btn').classList.add('active');
+    // Hide server channels when in friends mode
+    const channelList = document.querySelector('.channel-list');
+    if (channelList) channelList.style.display = '';
+    const addFriendBtn = document.querySelector('.add-friend-btn');
+    if (addFriendBtn) addFriendBtn.style.display = 'block';
     fetchFriendsAndRequests().then(() => {
       renderFriendsSidebar();
       renderFriendsChat(null);
@@ -1314,14 +1326,16 @@ document.addEventListener('DOMContentLoaded', function() {
     currentSidebarView = 'servers';
     selectedFriendId = null;
     document.querySelector('.friends-btn').classList.remove('active');
+    // Show server channels, hide add friend button
+    const channelList = document.querySelector('.channel-list');
+    if (channelList) channelList.style.display = '';
+    const addFriendBtn = document.querySelector('.add-friend-btn');
+    if (addFriendBtn) addFriendBtn.style.display = 'none';
     // Restore channels sidebar (fetch and render channels for selected server)
     const channelsHeader = document.querySelector('.channels-header');
     channelsHeader.textContent = '# Channels';
     channelsHeader.style.display = 'none';
-    const channelList = document.querySelector('.channel-list');
     channelList.innerHTML = '<!-- Channels will be dynamically added here -->';
-    const addFriendBtn = document.querySelector('.add-friend-btn');
-    if (addFriendBtn) addFriendBtn.style.display = 'none';
     // Restore main chat area (fetch and render messages for selected channel)
     const channelTitle = document.querySelector('.channel-title');
     channelTitle.textContent = '';
