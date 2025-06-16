@@ -1420,27 +1420,6 @@ body {
 @keyframes tickPop {}
 @keyframes draw {}
 
-.profile-lottie-bg {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  z-index: 0;
-  pointer-events: none;
-  opacity: 0.5;
-  overflow: hidden;
-}
-.profile-lottie-bg dotlottie-player {
-  width: 100% !important;
-  height: 100% !important;
-  min-width: 320px;
-  min-height: 100%;
-}
-.user-profile > *:not(.profile-lottie-bg) {
-  position: relative;
-  z-index: 1;
-}
-
 .server-skeleton {
   width: 48px;
   height: 48px;

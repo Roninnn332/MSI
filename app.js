@@ -182,8 +182,11 @@ function enterFriendsMode() {
   // --- Hide server list/sidebar ---
   const serverList = document.querySelector('.server-list');
   if (serverList) serverList.style.display = 'none';
-  // --- Hide server header and dropdown ---
-  hideServerHeader();
+  // --- Hide and clear server header and owner name ---
+  const serverHeader = document.querySelector('.channels-server-header');
+  if (serverHeader) serverHeader.style.display = 'none';
+  const ownerSpan = document.querySelector('.server-owner-name');
+  if (ownerSpan) ownerSpan.textContent = '';
   // --- Show only friends UI ---
   fetchFriendsAndRequests().then(() => {
     renderFriendsSidebar();
@@ -216,8 +219,16 @@ function exitFriendsMode() {
   if (messagesSection) messagesSection.innerHTML = '<!-- Messages will be dynamically added here -->';
   const chatInput = document.querySelector('.chat-input');
   if (chatInput) chatInput.style.display = '';
-  // Show server header for selected server
-  if (window.selectedServer) showServerHeader(window.selectedServer);
+  // --- Show server header for selected server, else clear owner name ---
+  const serverHeader = document.querySelector('.channels-server-header');
+  const ownerSpan = document.querySelector('.server-owner-name');
+  if (window.selectedServer) {
+    if (serverHeader) serverHeader.style.display = 'flex';
+    showServerHeader(window.selectedServer);
+  } else {
+    if (serverHeader) serverHeader.style.display = 'none';
+    if (ownerSpan) ownerSpan.textContent = '';
+  }
 }
 
 // --- FRIENDS MODE STATE ---
@@ -1337,8 +1348,16 @@ document.addEventListener('DOMContentLoaded', function() {
     messagesSection.innerHTML = '<!-- Messages will be dynamically added here -->';
     const chatInput = document.querySelector('.chat-input');
     chatInput.style.display = '';
-    // Show server header for selected server
-    if (window.selectedServer) showServerHeader(window.selectedServer);
+    // --- Show server header for selected server, else clear owner name ---
+    const serverHeader = document.querySelector('.channels-server-header');
+    const ownerSpan = document.querySelector('.server-owner-name');
+    if (window.selectedServer) {
+      if (serverHeader) serverHeader.style.display = 'flex';
+      showServerHeader(window.selectedServer);
+    } else {
+      if (serverHeader) serverHeader.style.display = 'none';
+      if (ownerSpan) ownerSpan.textContent = '';
+    }
   }
 
   // --- Premium Chat Search Logic ---
