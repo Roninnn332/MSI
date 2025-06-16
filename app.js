@@ -179,49 +179,55 @@ function enterFriendsMode() {
   currentSidebarView = 'friends';
   selectedFriendId = null;
   document.querySelector('.friends-btn').classList.add('active');
-  // --- DO NOT hide .server-list; servers sidebar should always be visible ---
-  // --- Show friends list/sidebar (channel-list) ---
+  // --- DEFENSIVE: Always show .server-list (servers sidebar) ---
+  const serverList = document.querySelector('.server-list');
+  if (serverList) serverList.style.display = '';
+  // --- Show .channel-list (friends/DMs) and clear it ---
   const channelList = document.querySelector('.channel-list');
-  if (channelList) channelList.style.display = '';
-  // --- Hide and clear server header and owner name ---
+  if (channelList) {
+    channelList.style.display = '';
+    channelList.innerHTML = '';
+  }
+  // --- Hide server header and clear owner name ---
   const serverHeader = document.querySelector('.channels-server-header');
   if (serverHeader) serverHeader.style.display = 'none';
   const ownerSpan = document.querySelector('.server-owner-name');
   if (ownerSpan) ownerSpan.textContent = '';
+  // --- Set channels header to Friends ---
+  const channelsHeader = document.querySelector('.channels-header');
+  if (channelsHeader) {
+    channelsHeader.textContent = 'Friends';
+    channelsHeader.style.display = '';
+  }
   // --- Show only friends UI in channel-list and main area ---
   fetchFriendsAndRequests().then(() => {
     renderFriendsSidebar();
     renderFriendsChat(null);
     renderAddFriendModal();
-    // Show channels header for friends
-    const channelsHeader = document.querySelector('.channels-header');
-    if (channelsHeader) channelsHeader.style.display = '';
   });
 }
 function exitFriendsMode() {
   currentSidebarView = 'servers';
   selectedFriendId = null;
   document.querySelector('.friends-btn').classList.remove('active');
-  // --- DO NOT hide .server-list; servers sidebar should always be visible ---
-  // --- Hide friends list/sidebar (channel-list) ---
+  // --- DEFENSIVE: Always show .server-list (servers sidebar) ---
+  const serverList = document.querySelector('.server-list');
+  if (serverList) serverList.style.display = '';
+  // --- Show .channel-list (server channels) and clear it ---
   const channelList = document.querySelector('.channel-list');
   if (channelList) {
-    channelList.style.display = 'none';
+    channelList.style.display = '';
     channelList.innerHTML = '';
   }
   const addFriendBtn = document.querySelector('.add-friend-btn');
   if (addFriendBtn) addFriendBtn.style.display = 'none';
-  // Restore channels sidebar (fetch and render channels for selected server)
+  // --- Set channels header to # Channels ---
   const channelsHeader = document.querySelector('.channels-header');
-  channelsHeader.textContent = '# Channels';
-  channelsHeader.style.display = 'none';
-  const channelTitle = document.querySelector('.channel-title');
-  if (channelTitle) channelTitle.textContent = '';
-  const messagesSection = document.querySelector('.messages');
-  if (messagesSection) messagesSection.innerHTML = '<!-- Messages will be dynamically added here -->';
-  const chatInput = document.querySelector('.chat-input');
-  if (chatInput) chatInput.style.display = '';
-  // --- Show server header for selected server, else clear owner name ---
+  if (channelsHeader) {
+    channelsHeader.textContent = '# Channels';
+    channelsHeader.style.display = '';
+  }
+  // --- Hide server header if no server selected, else show it ---
   const serverHeader = document.querySelector('.channels-server-header');
   const ownerSpan = document.querySelector('.server-owner-name');
   if (window.selectedServer) {
@@ -231,6 +237,13 @@ function exitFriendsMode() {
     if (serverHeader) serverHeader.style.display = 'none';
     if (ownerSpan) ownerSpan.textContent = '';
   }
+  // --- Clear main area ---
+  const channelTitle = document.querySelector('.channel-title');
+  if (channelTitle) channelTitle.textContent = '';
+  const messagesSection = document.querySelector('.messages');
+  if (messagesSection) messagesSection.innerHTML = '<!-- Messages will be dynamically added here -->';
+  const chatInput = document.querySelector('.chat-input');
+  if (chatInput) chatInput.style.display = '';
 }
 
 // --- FRIENDS MODE STATE ---
