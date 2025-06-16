@@ -1424,6 +1424,438 @@ document.addEventListener('DOMContentLoaded', function() {
       }
     });
   }
+
+  // --- SERVER SETTINGS PANEL LOGIC ---
+  const serverSettingsPanel = document.getElementById('server-settings-panel');
+  const appContainer = document.querySelector('.app-container');
+  const serverSettingsClose = document.querySelector('.server-settings-close');
+  const serverSettingsNav = document.querySelector('.server-settings-nav');
+  const serverSettingsSectionTitle = document.querySelector('.server-settings-section-title');
+  const serverSettingsContents = document.querySelectorAll('.server-settings-content');
+  const serverSettingsNameInput = document.querySelector('.server-settings-name-input');
+  const serverSettingsIconPreview = document.querySelector('.server-settings-icon-preview');
+  const serverSettingsIconBtn = document.querySelector('.server-settings-icon-btn');
+  const serverSettingsBannerColors = document.querySelectorAll('.server-settings-banner-color');
+  const serverSettingsSaveBtn = document.querySelector('.server-settings-save-btn');
+  const serverSettingsFeedback = document.querySelector('.server-settings-feedback');
+  const serverSettingsPreviewBanner = document.querySelector('.server-settings-preview-banner');
+  const serverSettingsPreviewIcon = document.querySelector('.server-settings-preview-icon img');
+  const serverSettingsPreviewName = document.querySelector('.server-settings-preview-name');
+  const serverSettingsPreviewDate = document.querySelector('.server-settings-preview-date-val');
+
+  // Helper: open/close
+  function openServerSettingsPanel() {
+    if (!window.selectedServer) return;
+    appContainer.style.display = 'none';
+    serverSettingsPanel.style.display = 'flex';
+    document.body.style.overflow = 'hidden';
+    // Fill form with current server data
+    serverSettingsNameInput.value = window.selectedServer.name || '';
+    serverSettingsIconPreview.src = window.selectedServer.icon_url || '';
+    serverSettingsPreviewIcon.src = window.selectedServer.icon_url || '';
+    serverSettingsPreviewName.textContent = window.selectedServer.name || '';
+    // Banner color
+    let bannerColor = window.selectedServer.banner_color || '#232129';
+    serverSettingsBannerColors.forEach(el => {
+      el.classList.toggle('selected', el.dataset.color === bannerColor);
+      el.style.background = el.dataset.color;
+    });
+    serverSettingsPreviewBanner.style.background = bannerColor;
+    // Date
+    if (window.selectedServer.created_at) {
+      const d = new Date(window.selectedServer.created_at);
+      serverSettingsPreviewDate.textContent = d.toLocaleString('default', { month: 'short', year: 'numeric' });
+    } else {
+      serverSettingsPreviewDate.textContent = '';
+    }
+    // Feedback
+    serverSettingsFeedback.textContent = '';
+    serverSettingsFeedback.classList.remove('show');
+    // Show profile section only
+    serverSettingsContents.forEach(c => c.style.display = c.classList.contains('server-settings-section-profile') ? '' : 'none');
+    serverSettingsSectionTitle.textContent = 'Server Profile';
+    // Nav highlight
+    serverSettingsNav.querySelectorAll('li').forEach(li => li.classList.remove('active'));
+    serverSettingsNav.querySelector('li[data-section="profile"]').classList.add('active');
+  }
+  function closeServerSettingsPanel() {
+    serverSettingsPanel.style.display = 'none';
+    appContainer.style.display = '';
+    document.body.style.overflow = '';
+  }
+  // Open on dropdown click
+  document.addEventListener('click', function(e) {
+    if (e.target.closest('.dropdown-option') && e.target.closest('.dropdown-option').textContent.includes('Server Settings')) {
+      openServerSettingsPanel();
+    }
+  });
+  // Close on ESC or close btn
+  if (serverSettingsClose) {
+    serverSettingsClose.addEventListener('click', closeServerSettingsPanel);
+  }
+  document.addEventListener('keydown', function(e) {
+    if (serverSettingsPanel.style.display === 'flex' && (e.key === 'Escape' || e.key === 'Esc')) {
+      closeServerSettingsPanel();
+    }
+  });
+  // Nav switching (only profile works for now)
+  if (serverSettingsNav) {
+    serverSettingsNav.addEventListener('click', function(e) {
+      const li = e.target.closest('li[data-section]');
+      if (!li) return;
+      serverSettingsNav.querySelectorAll('li').forEach(l => l.classList.remove('active'));
+      li.classList.add('active');
+      const section = li.dataset.section;
+      serverSettingsContents.forEach(c => c.style.display = c.classList.contains('server-settings-section-' + section) ? '' : 'none');
+      serverSettingsSectionTitle.textContent = li.textContent;
+    });
+  }
+  // Live update preview on name/icon/banner change
+  if (serverSettingsNameInput) {
+    serverSettingsNameInput.addEventListener('input', function() {
+      serverSettingsPreviewName.textContent = serverSettingsNameInput.value;
+    });
+  }
+  if (serverSettingsIconPreview) {
+    serverSettingsIconPreview.addEventListener('load', function() {
+      serverSettingsPreviewIcon.src = serverSettingsIconPreview.src;
+    });
+  }
+  serverSettingsBannerColors.forEach(el => {
+    el.addEventListener('click', function() {
+      serverSettingsBannerColors.forEach(c => c.classList.remove('selected'));
+      el.classList.add('selected');
+      serverSettingsPreviewBanner.style.background = el.dataset.color;
+    });
+  });
+  // Save changes (only name, icon, banner color for now)
+  if (serverSettingsSaveBtn) {
+    serverSettingsSaveBtn.addEventListener('click', async function() {
+      if (!window.selectedServer) return;
+      const newName = serverSettingsNameInput.value.trim();
+      const newBannerColor = serverSettingsPanel.querySelector('.server-settings-banner-color.selected')?.dataset.color || '#232129';
+      // For icon, just use the preview src for now
+      const newIconUrl = serverSettingsIconPreview.src;
+      serverSettingsSaveBtn.disabled = true;
+      serverSettingsFeedback.textContent = 'Saving...';
+      serverSettingsFeedback.classList.add('show');
+      try {
+        await supabase.from('servers').update({
+          name: newName,
+          icon_url: newIconUrl,
+          banner_color: newBannerColor
+        }).eq('id', window.selectedServer.id);
+        serverSettingsFeedback.textContent = 'Saved!';
+        setTimeout(() => serverSettingsFeedback.classList.remove('show'), 1200);
+        // Update local server object
+        window.selectedServer.name = newName;
+        window.selectedServer.icon_url = newIconUrl;
+        window.selectedServer.banner_color = newBannerColor;
+        fetchServers();
+      } catch (err) {
+        serverSettingsFeedback.textContent = 'Failed to save.';
+        setTimeout(() => serverSettingsFeedback.classList.remove('show'), 1800);
+      }
+      serverSettingsSaveBtn.disabled = false;
+    });
+  }
+  // Change icon (reuse cropper if available, else just file input for now)
+  if (serverSettingsIconBtn) {
+    serverSettingsIconBtn.addEventListener('click', function() {
+      const input = document.createElement('input');
+      input.type = 'file';
+      input.accept = 'image/*';
+      input.onchange = async function(e) {
+        const file = e.target.files[0];
+        if (!file) return;
+        // Optionally: use cropper here
+        // For now, upload directly
+        try {
+          const url = await uploadToCloudinary(file, 'image');
+          serverSettingsIconPreview.src = url;
+          serverSettingsPreviewIcon.src = url;
+        } catch (err) {
+          alert('Upload failed.');
+        }
+      };
+      input.click();
+    });
+  }
+
+  // --- SERVER MEMBERS SECTION LOGIC ---
+  const serverMembersSection = document.querySelector('.server-settings-section-members');
+  const serverMembersTableBody = serverMembersSection ? serverMembersSection.querySelector('tbody') : null;
+  const serverMembersCountVal = serverMembersSection ? serverMembersSection.querySelector('.server-members-count-val') : null;
+  const serverMembersSearch = serverMembersSection ? serverMembersSection.querySelector('.server-members-search') : null;
+  const serverMembersInfoBanner = serverMembersSection ? serverMembersSection.querySelector('.server-members-info-banner') : null;
+  const serverMembersInfoClose = serverMembersSection ? serverMembersSection.querySelector('.server-members-info-close') : null;
+
+  let allServerMembers = [];
+
+  async function fetchAndRenderServerMembers() {
+    if (!window.selectedServer || !serverMembersTableBody) return;
+    // Fetch members from Supabase
+    const { data, error } = await supabase
+      .from('server_members')
+      .select('user_id, joined_at, users: user_id (display_name, avatar_url)')
+      .eq('server_id', window.selectedServer.id)
+      .order('joined_at', { ascending: false });
+    if (error) {
+      serverMembersTableBody.innerHTML = `<tr><td colspan="4" style="color:#ff4d4f;text-align:center;">Failed to load members</td></tr>`;
+      if (serverMembersCountVal) serverMembersCountVal.textContent = '0';
+      return;
+    }
+    allServerMembers = (data || []).map(m => ({
+      id: m.user_id,
+      name: m.users?.display_name || m.user_id,
+      avatar: m.users?.avatar_url || '',
+      joined: m.joined_at,
+      roles: 'Member', // Placeholder for now
+    }));
+    renderServerMembersTable(allServerMembers);
+  }
+
+  function renderServerMembersTable(members) {
+    if (!serverMembersTableBody) return;
+    if (!members.length) {
+      serverMembersTableBody.innerHTML = `<tr><td colspan="4" style="color:#888;text-align:center;">No members found</td></tr>`;
+      if (serverMembersCountVal) serverMembersCountVal.textContent = '0';
+      return;
+    }
+    serverMembersTableBody.innerHTML = '';
+    members.forEach(member => {
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td><input type="checkbox" /></td>
+        <td>
+          <span class="server-members-name">
+            <img src="${member.avatar}" class="server-members-avatar" alt="Avatar" />
+            ${escapeHtml(member.name)}
+          </span>
+        </td>
+        <td>${formatMemberSince(member.joined)}</td>
+        <td><span class="server-members-roles">${member.roles}</span></td>
+      `;
+      serverMembersTableBody.appendChild(tr);
+    });
+    if (serverMembersCountVal) serverMembersCountVal.textContent = members.length;
+  }
+
+  function formatMemberSince(dateStr) {
+    if (!dateStr) return '';
+    const d = new Date(dateStr);
+    const now = new Date();
+    const diff = Math.floor((now - d) / (1000 * 60 * 60 * 24));
+    if (diff < 1) return 'Today';
+    if (diff === 1) return '1 day ago';
+    if (diff < 30) return `${diff} days ago`;
+    const months = Math.floor(diff / 30);
+    if (months === 1) return '1 month ago';
+    if (months < 12) return `${months} months ago`;
+    const years = Math.floor(months / 12);
+    return years === 1 ? '1 year ago' : `${years} years ago`;
+  }
+
+  // Dismiss info banner
+  if (serverMembersInfoClose && serverMembersInfoBanner) {
+    serverMembersInfoClose.addEventListener('click', function() {
+      serverMembersInfoBanner.style.display = 'none';
+    });
+  }
+
+  // Filter members as user types
+  if (serverMembersSearch) {
+    serverMembersSearch.addEventListener('input', function() {
+      const q = serverMembersSearch.value.trim().toLowerCase();
+      if (!q) {
+        renderServerMembersTable(allServerMembers);
+        return;
+      }
+      const filtered = allServerMembers.filter(m =>
+        m.name.toLowerCase().includes(q) || m.id.toLowerCase().includes(q)
+      );
+      renderServerMembersTable(filtered);
+    });
+  }
+
+  // Show members when Members tab is selected
+  if (serverSettingsNav) {
+    serverSettingsNav.addEventListener('click', function(e) {
+      const li = e.target.closest('li[data-section]');
+      if (!li) return;
+      if (li.dataset.section === 'members') {
+        fetchAndRenderServerMembers();
+      }
+    });
+  }
+  // Also fetch members when opening settings if Members tab is active
+  function openServerSettingsPanelWithMembersCheck() {
+    openServerSettingsPanel();
+    const active = serverSettingsNav.querySelector('li.active');
+    if (active && active.dataset.section === 'members') {
+      fetchAndRenderServerMembers();
+    }
+  }
+  // Patch open logic to use this
+  document.addEventListener('click', function(e) {
+    if (e.target.closest('.dropdown-option') && e.target.closest('.dropdown-option').textContent.includes('Server Settings')) {
+      openServerSettingsPanelWithMembersCheck();
+    }
+  });
+
+  // --- ENGAGEMENT ANALYTICS LOGIC ---
+  let memberGrowthChart = null;
+  let messageActivityChart = null;
+
+  async function fetchAndRenderEngagementAnalytics() {
+    if (!window.selectedServer) return;
+    // Fetch all members for this server
+    const { data: members, error } = await supabase
+      .from('server_members')
+      .select('user_id, joined_at, users: user_id (display_name, avatar_url)')
+      .eq('server_id', window.selectedServer.id)
+      .order('joined_at', { ascending: true });
+    if (error) return;
+    // --- Stat cards ---
+    const totalMembers = members.length;
+    document.getElementById('engagement-total-members').textContent = totalMembers;
+    // New members this week
+    const now = new Date();
+    const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+    const newMembers = members.filter(m => new Date(m.joined_at) >= weekAgo).length;
+    document.getElementById('engagement-new-members').textContent = newMembers;
+    // --- Member Growth Chart (last 30 days) ---
+    const growthLabels = [];
+    const growthData = [];
+    for (let i = 29; i >= 0; i--) {
+      const d = new Date(now.getTime() - i * 24 * 60 * 60 * 1000);
+      growthLabels.push(`${d.getMonth()+1}/${d.getDate()}`);
+      const count = members.filter(m => new Date(m.joined_at) <= d).length;
+      growthData.push(count);
+    }
+    if (window.Chart) {
+      if (memberGrowthChart) memberGrowthChart.destroy();
+      memberGrowthChart = new Chart(document.getElementById('member-growth-chart').getContext('2d'), {
+        type: 'line',
+        data: {
+          labels: growthLabels,
+          datasets: [{
+            label: 'Members',
+            data: growthData,
+            borderColor: '#b39ddb',
+            backgroundColor: 'rgba(179,157,219,0.12)',
+            fill: true,
+            tension: 0.3,
+            pointRadius: 0,
+          }]
+        },
+        options: {
+          plugins: { legend: { display: false } },
+          scales: { x: { grid: { display: false } }, y: { beginAtZero: true, grid: { color: '#222226' } } },
+          responsive: true,
+          maintainAspectRatio: false,
+        }
+      });
+    }
+    // --- Message Activity Chart (last 14 days) ---
+    let messageCounts = [];
+    let topMembers = [];
+    if (window.supabase && supabase.from && supabase.from('messages')) {
+      const { data: messages } = await supabase
+        .from('messages')
+        .select('user_id, created_at')
+        .eq('server_id', window.selectedServer.id);
+      // Messages per day
+      const msgLabels = [];
+      const msgData = [];
+      for (let i = 13; i >= 0; i--) {
+        const d = new Date(now.getTime() - i * 24 * 60 * 60 * 1000);
+        msgLabels.push(`${d.getMonth()+1}/${d.getDate()}`);
+        const count = (messages || []).filter(msg => {
+          const msgDate = new Date(msg.created_at);
+          return msgDate.getFullYear() === d.getFullYear() && msgDate.getMonth() === d.getMonth() && msgDate.getDate() === d.getDate();
+        }).length;
+        msgData.push(count);
+      }
+      if (window.Chart) {
+        if (messageActivityChart) messageActivityChart.destroy();
+        messageActivityChart = new Chart(document.getElementById('message-activity-chart').getContext('2d'), {
+          type: 'bar',
+          data: {
+            labels: msgLabels,
+            datasets: [{
+              label: 'Messages',
+              data: msgData,
+              backgroundColor: '#7ed957',
+              borderRadius: 6,
+              maxBarThickness: 18,
+            }]
+          },
+          options: {
+            plugins: { legend: { display: false } },
+            scales: { x: { grid: { display: false } }, y: { beginAtZero: true, grid: { color: '#222226' } } },
+            responsive: true,
+            maintainAspectRatio: false,
+          }
+        });
+      }
+      // --- Most Active Members ---
+      const counts = {};
+      (messages || []).forEach(msg => {
+        counts[msg.user_id] = (counts[msg.user_id] || 0) + 1;
+      });
+      topMembers = Object.entries(counts)
+        .map(([id, count]) => {
+          const user = members.find(m => m.user_id === id);
+          return {
+            id,
+            name: user?.users?.display_name || id,
+            avatar: user?.users?.avatar_url || '',
+            count
+          };
+        })
+        .sort((a, b) => b.count - a.count)
+        .slice(0, 5);
+    }
+    // Render most active members
+    const mostActiveList = document.querySelector('.most-active-members-list');
+    if (mostActiveList) {
+      mostActiveList.innerHTML = '';
+      if (topMembers.length) {
+        topMembers.forEach(m => {
+          const li = document.createElement('li');
+          li.innerHTML = `<img src="${m.avatar}" class="active-member-avatar" alt="Avatar" /> <span class="active-member-name">${escapeHtml(m.name)}</span> <span class="active-member-count">${m.count} messages</span>`;
+          mostActiveList.appendChild(li);
+        });
+      } else {
+        mostActiveList.innerHTML = '<li style="color:#888;">No message data yet</li>';
+      }
+    }
+  }
+  // Show analytics when Engagement tab is selected
+  if (serverSettingsNav) {
+    serverSettingsNav.addEventListener('click', function(e) {
+      const li = e.target.closest('li[data-section]');
+      if (!li) return;
+      if (li.dataset.section === 'engagement') {
+        fetchAndRenderEngagementAnalytics();
+      }
+    });
+  }
+  // Also fetch analytics when opening settings if Engagement tab is active
+  function openServerSettingsPanelWithEngagementCheck() {
+    openServerSettingsPanel();
+    const active = serverSettingsNav.querySelector('li.active');
+    if (active && active.dataset.section === 'engagement') {
+      fetchAndRenderEngagementAnalytics();
+    }
+  }
+  document.addEventListener('click', function(e) {
+    if (e.target.closest('.dropdown-option') && e.target.closest('.dropdown-option').textContent.includes('Server Settings')) {
+      openServerSettingsPanelWithEngagementCheck();
+    }
+  });
+  // --- END ENGAGEMENT ANALYTICS LOGIC ---
 });
 
 // Show a temporary feedback message at the top of the server dropdown

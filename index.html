@@ -257,6 +257,7 @@
   <script src="https://cdn.jsdelivr.net/npm/cropperjs@1.5.13/dist/cropper.min.js"></script>
   <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
   <script src="app.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.2/dist/chart.umd.min.js"></script>
 
   <!-- Cropper Modal -->
   <div id="cropper-modal" style="display:none; position:fixed; z-index:3000; top:0; left:0; width:100vw; height:100vh; background:rgba(0,0,0,0.85); align-items:center; justify-content:center;">
@@ -313,6 +314,142 @@
           <span class="add-friend-request-username">coolguy42</span>
           <span class="add-friend-request-status">(Pending)</span>
         </div>
+      </div>
+    </div>
+  </div>
+  <!-- Full-screen Server Settings Panel -->
+  <div id="server-settings-panel" class="server-settings-panel" style="display:none;">
+    <div class="server-settings-sidebar">
+      <div class="server-settings-title">SERVER SETTINGS</div>
+      <ul class="server-settings-nav">
+        <li class="active" data-section="profile">Server Profile</li>
+        <li data-section="engagement">Engagement</li>
+        <li data-section="boost">Boost Perks</li>
+        <div class="server-settings-divider">EXPRESSION</div>
+        <li data-section="emoji">Emoji</li>
+        <li data-section="stickers">Stickers</li>
+        <li data-section="soundboard">Soundboard</li>
+        <div class="server-settings-divider">PEOPLE</div>
+        <li data-section="members">Members</li>
+        <li data-section="roles">Roles</li>
+        <li data-section="invites">Invites</li>
+        <li data-section="access">Access</li>
+        <div class="server-settings-divider">APPS</div>
+        <li data-section="integrations">Integrations</li>
+        <li data-section="appdir">App Directory</li>
+        <div class="server-settings-divider">MODERATION</div>
+        <li data-section="safety">Safety Setup</li>
+        <li data-section="audit">Audit Log</li>
+        <li data-section="bans">Bans</li>
+      </ul>
+    </div>
+    <div class="server-settings-main">
+      <div class="server-settings-header">
+        <span class="server-settings-section-title">Server Profile</span>
+        <button class="server-settings-close" title="Close">&times; <span class="esc-label">ESC</span></button>
+      </div>
+      <div class="server-settings-content server-settings-section-profile">
+        <h2>Server Profile</h2>
+        <p class="server-settings-desc">Customize how your server appears in invite links and, if enabled, in Server Discovery and Announcement Channel messages</p>
+        <label class="server-settings-label">Name</label>
+        <input type="text" class="server-settings-name-input" />
+        <label class="server-settings-label">Icon <span class="server-settings-icon-hint">(min 512x512)</span></label>
+        <div class="server-settings-icon-row">
+          <img src="" class="server-settings-icon-preview" alt="Server Icon" />
+          <button class="server-settings-icon-btn">Change Server Icon</button>
+        </div>
+        <label class="server-settings-label">Banner</label>
+        <div class="server-settings-banner-row">
+          <div class="server-settings-banner-color" data-color="#232129"></div>
+          <div class="server-settings-banner-color" data-color="#ff5fa2"></div>
+          <div class="server-settings-banner-color" data-color="#ff6b57"></div>
+          <div class="server-settings-banner-color" data-color="#ffd84d"></div>
+          <div class="server-settings-banner-color" data-color="#b39ddb"></div>
+          <div class="server-settings-banner-color" data-color="#4fd8ff"></div>
+          <div class="server-settings-banner-color" data-color="#7ed957"></div>
+          <div class="server-settings-banner-color" data-color="#222226"></div>
+        </div>
+        <div class="server-settings-save-row">
+          <button class="server-settings-save-btn">Save Changes</button>
+          <span class="server-settings-feedback"></span>
+        </div>
+      </div>
+      <div class="server-settings-content server-settings-section-engagement" style="display:none;">
+        <h2>Engagement</h2>
+        <p class="server-settings-desc">Track and boost your community engagement here with real analytics and insights.</p>
+        <div class="engagement-stats-row">
+          <div class="engagement-stat-card total-members">
+            <div class="stat-label">Total Members</div>
+            <div class="stat-value" id="engagement-total-members">0</div>
+          </div>
+          <div class="engagement-stat-card new-members">
+            <div class="stat-label">New This Week</div>
+            <div class="stat-value" id="engagement-new-members">0</div>
+          </div>
+        </div>
+        <div class="engagement-charts-row">
+          <div class="engagement-chart-card">
+            <div class="chart-title">Member Growth (Last 30 Days)</div>
+            <canvas id="member-growth-chart" height="120"></canvas>
+          </div>
+          <div class="engagement-chart-card">
+            <div class="chart-title">Message Activity (Last 14 Days)</div>
+            <canvas id="message-activity-chart" height="120"></canvas>
+          </div>
+        </div>
+        <div class="engagement-most-active">
+          <div class="chart-title">Most Active Members</div>
+          <ul class="most-active-members-list">
+            <!-- Top members will be dynamically added here -->
+          </ul>
+        </div>
+      </div>
+      <div class="server-settings-content server-settings-section-members" style="display:none;">
+        <h2>Server Members</h2>
+        <div class="server-members-info-banner">
+          <img src="https://cdn.discordapp.com/attachments/1100000000000000000/112233445566778899/party.png" alt="Info" class="server-members-info-img" />
+          <div class="server-members-info-text">
+            <strong>Show Members In Channel List</strong><br>
+            Enabling this will show the members page in the channel list, allowing you to quickly see who's recently joined your server, and find any users flagged for unusual activity.
+          </div>
+          <button class="server-members-info-close" title="Close">&times;</button>
+        </div>
+        <div class="server-members-table-controls">
+          <span class="server-members-table-title">Recent Members</span>
+          <input type="text" class="server-members-search" placeholder="Search by username or id" />
+          <button class="server-members-sort-btn" title="Sort">⇅ Sort</button>
+          <button class="server-members-prune-btn" title="Prune">Prune</button>
+        </div>
+        <div class="server-members-table-wrapper">
+          <table class="server-members-table">
+            <thead>
+              <tr>
+                <th><input type="checkbox" class="server-members-select-all" /></th>
+                <th>NAME</th>
+                <th>MEMBER SINCE</th>
+                <th>ROLES</th>
+              </tr>
+            </thead>
+            <tbody>
+              <!-- Members will be dynamically added here -->
+            </tbody>
+          </table>
+          <div class="server-members-count">Showing <span class="server-members-count-val">0</span> member(s)</div>
+        </div>
+      </div>
+      <!-- Placeholder content for other sections -->
+      <div class="server-settings-content server-settings-section-placeholder" style="display:none;">
+        <h2>Coming Soon</h2>
+        <p>This section will be available in a future update.</p>
+      </div>
+    </div>
+    <div class="server-settings-preview">
+      <div class="server-settings-preview-card">
+        <div class="server-settings-preview-banner"></div>
+        <div class="server-settings-preview-icon"><img src="" alt="Icon" /></div>
+        <div class="server-settings-preview-name"></div>
+        <div class="server-settings-preview-meta"><span class="server-settings-preview-online">1 Online</span> &bull; <span class="server-settings-preview-members">1 Member</span></div>
+        <div class="server-settings-preview-date">Est. <span class="server-settings-preview-date-val"></span></div>
       </div>
     </div>
   </div>
