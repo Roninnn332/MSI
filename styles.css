@@ -2126,4 +2126,112 @@ body {
 .generate-invite-btn:disabled {
   opacity: 0.7;
   cursor: not-allowed;
+}
+
+/* Stunning join server modal beside profile */
+.profile-join-modal {
+  position: fixed;
+  top: 50%;
+  left: calc(50% + 180px); /* right of profile section */
+  transform: translateY(-50%) scale(0.92);
+  z-index: 3000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 0;
+  min-height: 0;
+  pointer-events: auto;
+  background: none;
+  animation: profileJoinPopIn 0.38s cubic-bezier(.4,0,.2,1);
+}
+@keyframes profileJoinPopIn {
+  from { opacity: 0; transform: translateY(-60%) scale(0.85); }
+  to   { opacity: 1; transform: translateY(-50%) scale(1); }
+}
+.profile-join-modal-content {
+  background: rgba(34, 30, 48, 0.92);
+  backdrop-filter: blur(12px) saturate(1.2);
+  border-radius: 18px;
+  box-shadow: 0 4px 32px var(--shadow), 0 0 0 2px var(--accent);
+  padding: 32px 28px 24px 28px;
+  min-width: 270px;
+  max-width: 92vw;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  position: relative;
+  animation: profileJoinContentPop 0.44s cubic-bezier(.4,0,.2,1);
+}
+@keyframes profileJoinContentPop {
+  from { opacity: 0; transform: scale(0.85) translateY(40px); }
+  to   { opacity: 1; transform: scale(1) translateY(0); }
+}
+.profile-join-modal-content h2 {
+  color: var(--accent);
+  font-size: 1.18rem;
+  font-weight: 700;
+  margin-bottom: 18px;
+  text-align: center;
+}
+.profile-join-input {
+  background: var(--background-tertiary);
+  color: var(--text);
+  border: none;
+  border-radius: 10px;
+  padding: 10px 12px;
+  font-size: 1.02rem;
+  margin-bottom: 16px;
+  outline: none;
+  box-shadow: 0 2px 8px var(--shadow);
+  transition: box-shadow 0.2s, border 0.2s;
+}
+.profile-join-input:focus {
+  border: 1.5px solid var(--accent);
+  box-shadow: 0 2px 16px var(--shadow);
+}
+.profile-join-confirm-btn {
+  background: var(--accent);
+  color: #fff;
+  border: none;
+  border-radius: 10px;
+  padding: 10px 0;
+  font-size: 1.05rem;
+  font-weight: 600;
+  cursor: pointer;
+  margin-bottom: 10px;
+  box-shadow: 0 2px 8px var(--shadow);
+  transition: background 0.2s, transform 0.2s;
+}
+.profile-join-confirm-btn:hover {
+  background: var(--accent-hover);
+  transform: scale(1.04);
+}
+.profile-join-modal-close {
+  position: absolute;
+  top: 10px;
+  right: 14px;
+  background: none;
+  border: none;
+  color: var(--text-secondary);
+  font-size: 1.3rem;
+  font-weight: 700;
+  cursor: pointer;
+  z-index: 10;
+  transition: color 0.2s;
+}
+.profile-join-modal-close:hover {
+  color: var(--accent);
+}
+.profile-join-feedback {
+  min-height: 22px;
+  text-align: center;
+  font-size: 1.01rem;
+  font-weight: 500;
+  color: var(--accent);
+  margin-top: 2px;
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+.profile-join-feedback.show {
+  opacity: 1;
 } 

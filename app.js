@@ -6,39 +6,8 @@ const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBh
 const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 // --- INVITE CODE TOOLTIP LOGIC ---
-let inviteOption = null;
-let inviteTooltip = null;
-
-function updateInviteTooltip() {
-  if (!window.selectedServer) {
-    if (inviteTooltip) inviteTooltip.style.display = 'none';
-    return;
-  }
-  if (inviteTooltip) {
-    let code = window.selectedServer.invite_code;
-    if (!code) {
-      inviteTooltip.innerHTML = `<span class=\"invite-code-text\" style=\"color:#ffb84d;\">No invite code set</span> <button class=\"generate-invite-btn\">Generate</button>`;
-    } else {
-      inviteTooltip.innerHTML =
-        `<span class=\"invite-code-text\">${code}</span>` +
-        `<span class=\"copy-icon\" title=\"Copy\">📋</span>`;
-    }
-    inviteTooltip.style.display = '';
-    inviteTooltip.classList.remove('copied');
-    const genBtn = inviteTooltip.querySelector('.generate-invite-btn');
-    if (genBtn) {
-      genBtn.onclick = async function(e) {
-        e.stopPropagation();
-        genBtn.disabled = true;
-        genBtn.textContent = 'Generating...';
-        const newCode = generateInviteCode();
-        await supabase.from('servers').update({ invite_code: newCode }).eq('id', window.selectedServer.id);
-        window.selectedServer.invite_code = newCode;
-        updateInviteTooltip();
-      };
-    }
-  }
-}
+// Remove all tooltip logic
+// (No updateInviteTooltip, attachInviteTooltipCopyHandler, or tooltip event listeners)
 
 // Helper to generate invite code
 function generateInviteCode(length = 8) {
@@ -181,7 +150,6 @@ function selectServer(server) {
   currentSidebarView = 'servers'; // Ensure mode is set immediately
   window.selectedServer = server;
   showServerHeader(server);
-  if (inviteTooltip) inviteTooltip.style.display = 'none';
 
   // Hide friends header if visible
   const channelsHeader = document.querySelector('.channels-header');
@@ -200,7 +168,14 @@ function selectServer(server) {
 
   // Always render server channels (even if just a placeholder)
   renderServerChannels(server);
-  // TODO: update chat area for this server
+
+  // --- Clear main chat area and header when switching to a server ---
+  const channelTitle = document.querySelector('.channel-title');
+  if (channelTitle) channelTitle.textContent = '';
+  const messagesSection = document.querySelector('.messages');
+  if (messagesSection) messagesSection.innerHTML = '<!-- Messages will be dynamically added here -->';
+  const chatInput = document.querySelector('.chat-input');
+  if (chatInput) chatInput.style.display = '';
 }
 
 // Hide server header in friends/DMs mode
@@ -605,34 +580,6 @@ function formatTime(ts) {
 }
 
 document.addEventListener('DOMContentLoaded', function() {
-  inviteOption = document.querySelector('.invite-people-option');
-  inviteTooltip = document.querySelector('.invite-code-tooltip');
-  if (inviteOption && inviteTooltip) {
-    document.addEventListener('mouseover', function(e) {
-      if (inviteOption && inviteOption.contains(e.target)) {
-        updateInviteTooltip();
-      }
-    });
-    document.addEventListener('focusin', function(e) {
-      if (inviteOption && inviteOption.contains(e.target)) {
-        updateInviteTooltip();
-      }
-    });
-    inviteTooltip.addEventListener('click', function(e) {
-      if (e.target.classList.contains('copy-icon') || e.target.classList.contains('invite-code-text')) {
-        const code = window.selectedServer && window.selectedServer.invite_code;
-        if (code) {
-          navigator.clipboard.writeText(code);
-          inviteTooltip.classList.add('copied');
-          inviteTooltip.innerHTML = `<span class=\"invite-code-text\">${code}</span><span class=\"copy-icon\" title=\"Copy\">✅ Copied!</span>`;
-          setTimeout(() => {
-            inviteTooltip.classList.remove('copied');
-            updateInviteTooltip();
-          }, 1200);
-        }
-      }
-    });
-  }
   // Fetch servers list on page load
   fetchServers();
   const addServerBtn = document.querySelector('.add-server');
@@ -1359,4 +1306,135 @@ document.addEventListener('DOMContentLoaded', function() {
   }, 3000);
 
   showWelcomeMessage();
-}); 
+
+  // --- JOIN SERVER MODAL LOGIC (profile section) ---
+  const joinServerBtn = document.querySelector('.join-server-btn');
+  const joinModal = document.getElementById('profile-join-server-modal');
+  const joinInput = joinModal ? joinModal.querySelector('.profile-join-input') : null;
+  const joinConfirmBtn = joinModal ? joinModal.querySelector('.profile-join-confirm-btn') : null;
+  const joinCloseBtn = joinModal ? joinModal.querySelector('.profile-join-modal-close') : null;
+  const joinFeedback = joinModal ? joinModal.querySelector('.profile-join-feedback') : null;
+
+  function showJoinModal() {
+    if (!joinModal) return;
+    joinModal.style.display = 'flex';
+    setTimeout(() => {
+      joinModal.classList.add('open');
+      if (joinInput) {
+        joinInput.value = '';
+        joinInput.focus();
+      }
+      if (joinFeedback) {
+        joinFeedback.textContent = '';
+        joinFeedback.classList.remove('show');
+      }
+    }, 10);
+  }
+  function hideJoinModal() {
+    if (!joinModal) return;
+    joinModal.classList.remove('open');
+    setTimeout(() => {
+      joinModal.style.display = 'none';
+    }, 320);
+  }
+  if (joinServerBtn) {
+    joinServerBtn.addEventListener('click', function(e) {
+      e.preventDefault();
+      showJoinModal();
+    });
+  }
+  if (joinCloseBtn) {
+    joinCloseBtn.addEventListener('click', function(e) {
+      e.preventDefault();
+      hideJoinModal();
+    });
+  }
+  if (joinModal) {
+    joinModal.addEventListener('mousedown', function(e) {
+      if (e.target === joinModal) hideJoinModal();
+    });
+  }
+  if (joinConfirmBtn && joinInput) {
+    joinConfirmBtn.addEventListener('click', async function() {
+      const code = joinInput.value.trim();
+      if (!code) {
+        showJoinFeedback('Please enter an invite code.', false);
+        joinInput.focus();
+        return;
+      }
+      joinConfirmBtn.disabled = true;
+      showJoinFeedback('Joining...', true);
+      // Simulate loading
+      try {
+        // Try to find the server by invite code
+        const { data: servers, error } = await supabase.from('servers').select('*').eq('invite_code', code);
+        if (error || !servers || servers.length === 0) {
+          showJoinFeedback('Invalid invite code.', false);
+          joinConfirmBtn.disabled = false;
+          return;
+        }
+        const server = servers[0];
+        // Add user as member if not already
+        const userId = localStorage.getItem('user_id');
+        const { data: existing } = await supabase.from('server_members').select('*').eq('server_id', server.id).eq('user_id', userId);
+        if (existing && existing.length > 0) {
+          showJoinFeedback('You are already a member!', false);
+          joinConfirmBtn.disabled = false;
+          return;
+        }
+        await supabase.from('server_members').insert({ server_id: server.id, user_id: userId });
+        showJoinFeedback('Joined! 🎉', true);
+        setTimeout(() => {
+          hideJoinModal();
+          fetchServers();
+        }, 1200);
+      } catch (err) {
+        showJoinFeedback('Failed to join. Try again.', false);
+      }
+      joinConfirmBtn.disabled = false;
+    });
+    joinInput.addEventListener('keydown', function(e) {
+      if (e.key === 'Enter') joinConfirmBtn.click();
+    });
+  }
+  function showJoinFeedback(msg, success) {
+    if (!joinFeedback) return;
+    joinFeedback.textContent = msg;
+    joinFeedback.style.color = success ? '#7ed957' : '#ff4d4f';
+    joinFeedback.classList.add('show');
+    joinFeedback.style.opacity = '1';
+    setTimeout(() => {
+      joinFeedback.classList.remove('show');
+      joinFeedback.style.opacity = '0';
+    }, success ? 1100 : 1800);
+  }
+});
+
+// Show a temporary feedback message at the top of the server dropdown
+function showInviteCopyFeedback(msg) {
+  let feedback = document.getElementById('invite-copy-feedback');
+  if (!feedback) {
+    feedback = document.createElement('div');
+    feedback.id = 'invite-copy-feedback';
+    feedback.style.position = 'fixed';
+    feedback.style.top = '24px';
+    feedback.style.left = '50%';
+    feedback.style.transform = 'translateX(-50%)';
+    feedback.style.background = 'var(--accent)';
+    feedback.style.color = '#fff';
+    feedback.style.padding = '10px 24px';
+    feedback.style.borderRadius = '12px';
+    feedback.style.fontWeight = '600';
+    feedback.style.fontSize = '1.08rem';
+    feedback.style.boxShadow = '0 2px 16px var(--shadow)';
+    feedback.style.zIndex = '9999';
+    feedback.style.opacity = '0';
+    feedback.style.transition = 'opacity 0.3s';
+    document.body.appendChild(feedback);
+  }
+  feedback.textContent = msg;
+  feedback.style.opacity = '1';
+  setTimeout(() => {
+    feedback.style.opacity = '0';
+  }, 1400);
+} 
