@@ -163,7 +163,22 @@ document.addEventListener('mousedown', (e) => {
 
 // Server selection logic
 window.selectedServer = null;
+async function renderServerChannels(server) {
+  const channelList = document.querySelector('.channel-list');
+  if (!channelList) return;
+  // Always clear the channel list and only show placeholder
+  channelList.innerHTML = '';
+  // Defensive: remove any friend-list-item classes
+  Array.from(channelList.querySelectorAll('.friend-list-item')).forEach(el => el.remove());
+  // Show placeholder for now
+  const li = document.createElement('li');
+  li.textContent = 'No channels yet';
+  li.style.color = 'var(--text-secondary)';
+  li.style.fontStyle = 'italic';
+  channelList.appendChild(li);
+}
 function selectServer(server) {
+  currentSidebarView = 'servers'; // Ensure mode is set immediately
   window.selectedServer = server;
   showServerHeader(server);
   if (inviteTooltip) inviteTooltip.style.display = 'none';
@@ -177,11 +192,14 @@ function selectServer(server) {
   if (channelList) {
     channelList.innerHTML = '';
     channelList.style.display = '';
+    // Defensive: remove any friend-list-item classes
+    Array.from(channelList.querySelectorAll('.friend-list-item')).forEach(el => el.remove());
   }
   const addFriendBtn = document.querySelector('.add-friend-btn');
   if (addFriendBtn) addFriendBtn.style.display = 'none';
 
-  // TODO: fetch and render channels for this server
+  // Always render server channels (even if just a placeholder)
+  renderServerChannels(server);
   // TODO: update chat area for this server
 }
 
@@ -307,6 +325,7 @@ async function fetchFriendsAndRequests() {
 }
 
 function renderFriendsSidebar() {
+  if (currentSidebarView !== 'friends') return;
   const channelsHeader = document.querySelector('.channels-header');
   const channelList = document.querySelector('.channel-list');
   const addFriendBtn = document.querySelector('.add-friend-btn');
