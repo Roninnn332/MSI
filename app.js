@@ -840,7 +840,7 @@ document.addEventListener('DOMContentLoaded', function() {
           owner_id: ownerId,
           invite_code: inviteCode
         }
-      ]);
+      ]).select();
       if (error) throw error;
       const newServer = data && data[0];
       if (newServer) {
