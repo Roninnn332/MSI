@@ -116,8 +116,6 @@ function toggleDropdown(e) {
       // Position dropdown below header
       const headerRect = serverHeader.getBoundingClientRect();
       dropdownMenu.style.top = headerRect.height + 'px';
-      // Update invite tooltip in case server changed
-      updateInviteTooltip();
     }
   }
 }
@@ -1407,6 +1405,24 @@ document.addEventListener('DOMContentLoaded', function() {
       joinFeedback.classList.remove('show');
       joinFeedback.style.opacity = '0';
     }, success ? 1100 : 1800);
+  }
+
+  // --- INVITE PEOPLE: Direct copy on click ---
+  const inviteOption = document.querySelector('.invite-people-option');
+  if (inviteOption) {
+    inviteOption.addEventListener('click', async function(e) {
+      e.stopPropagation();
+      if (!window.selectedServer || !window.selectedServer.invite_code) {
+        showInviteCopyFeedback('No invite code set.');
+        return;
+      }
+      try {
+        await navigator.clipboard.writeText(window.selectedServer.invite_code);
+        showInviteCopyFeedback('Invite code copied!');
+      } catch (err) {
+        showInviteCopyFeedback('Copy failed.');
+      }
+    });
   }
 });
 

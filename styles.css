@@ -214,7 +214,7 @@ body {
   background: var(--background-tertiary);
   border-radius: 0;
   position: relative;
-  overflow: hidden;
+  overflow: visible;
 }
 .profile-banner,
 .profile-banner-video {
@@ -236,6 +236,8 @@ body {
   align-items: center;
   margin-top: -48px;
   margin-bottom: 8px;
+  z-index: 999;
+
 }
 .profile-avatar-circle {
   width: 96px;
@@ -247,6 +249,8 @@ body {
   justify-content: center;
   position: relative;
   box-shadow: 0 2px 8px var(--shadow);
+  z-index: 999;
+
 }
 .profile-avatar {
   width: 88px;
@@ -255,6 +259,7 @@ body {
   object-fit: cover;
   background: var(--background-tertiary);
   display: block;
+  z-index: 999;
 }
 .change-avatar-btn {
   position: absolute;
@@ -273,6 +278,7 @@ body {
   cursor: pointer;
   box-shadow: 0 2px 8px var(--shadow);
   transition: background 0.2s;
+  z-index: 9999999;
 }
 .change-avatar-btn:hover {
   background: var(--accent-hover);
