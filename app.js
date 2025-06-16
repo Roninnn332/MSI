@@ -179,13 +179,8 @@ function enterFriendsMode() {
   currentSidebarView = 'friends';
   selectedFriendId = null;
   document.querySelector('.friends-btn').classList.add('active');
-  // --- Hide server list/sidebar ---
-  const serverList = document.querySelector('.server-list');
-  if (serverList) {
-    serverList.style.display = 'none';
-    serverList.innerHTML = '';
-  }
-  // --- Show friends list/sidebar ---
+  // --- DO NOT hide .server-list; servers sidebar should always be visible ---
+  // --- Show friends list/sidebar (channel-list) ---
   const channelList = document.querySelector('.channel-list');
   if (channelList) channelList.style.display = '';
   // --- Hide and clear server header and owner name ---
@@ -193,7 +188,7 @@ function enterFriendsMode() {
   if (serverHeader) serverHeader.style.display = 'none';
   const ownerSpan = document.querySelector('.server-owner-name');
   if (ownerSpan) ownerSpan.textContent = '';
-  // --- Show only friends UI ---
+  // --- Show only friends UI in channel-list and main area ---
   fetchFriendsAndRequests().then(() => {
     renderFriendsSidebar();
     renderFriendsChat(null);
@@ -207,10 +202,8 @@ function exitFriendsMode() {
   currentSidebarView = 'servers';
   selectedFriendId = null;
   document.querySelector('.friends-btn').classList.remove('active');
-  // --- Show server list/sidebar ---
-  const serverList = document.querySelector('.server-list');
-  if (serverList) serverList.style.display = '';
-  // --- Hide friends list/sidebar ---
+  // --- DO NOT hide .server-list; servers sidebar should always be visible ---
+  // --- Hide friends list/sidebar (channel-list) ---
   const channelList = document.querySelector('.channel-list');
   if (channelList) {
     channelList.style.display = 'none';
