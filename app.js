@@ -1468,6 +1468,8 @@ document.addEventListener('DOMContentLoaded', function() {
     } else {
       serverSettingsPreviewDate.textContent = '';
     }
+    // --- Update member count in preview ---
+    updateServerSettingsPreviewMemberCount();
     // Feedback
     serverSettingsFeedback.textContent = '';
     serverSettingsFeedback.classList.remove('show');
@@ -1478,6 +1480,23 @@ document.addEventListener('DOMContentLoaded', function() {
     serverSettingsNav.querySelectorAll('li').forEach(li => li.classList.remove('active'));
     serverSettingsNav.querySelector('li[data-section="profile"]').classList.add('active');
   }
+
+  // Update member count in preview card
+  async function updateServerSettingsPreviewMemberCount() {
+    const previewMembers = document.querySelector('.server-settings-preview-members');
+    if (!window.selectedServer || !previewMembers) return;
+    // Fetch member count from Supabase
+    const { count, error } = await supabase
+      .from('server_members')
+      .select('user_id', { count: 'exact', head: true })
+      .eq('server_id', window.selectedServer.id);
+    if (!error && typeof count === 'number') {
+      previewMembers.textContent = `${count} Member${count === 1 ? '' : 's'}`;
+    } else {
+      previewMembers.textContent = '1 Member';
+    }
+  }
+
   function closeServerSettingsPanel() {
     serverSettingsPanel.style.display = 'none';
     appContainer.style.display = '';
@@ -1603,6 +1622,7 @@ document.addEventListener('DOMContentLoaded', function() {
     if (error) {
       serverMembersTableBody.innerHTML = `<tr><td colspan="4" style="color:#ff4d4f;text-align:center;">Failed to load members</td></tr>`;
       if (serverMembersCountVal) serverMembersCountVal.textContent = '0';
+      await updateServerSettingsPreviewMemberCount();
       return;
     }
     allServerMembers = (data || []).map(m => ({
@@ -1613,6 +1633,7 @@ document.addEventListener('DOMContentLoaded', function() {
       roles: 'Member', // Placeholder for now
     }));
     renderServerMembersTable(allServerMembers);
+    await updateServerSettingsPreviewMemberCount();
   }
 
   function renderServerMembersTable(members) {
@@ -1856,6 +1877,171 @@ document.addEventListener('DOMContentLoaded', function() {
     }
   });
   // --- END ENGAGEMENT ANALYTICS LOGIC ---
+
+  // --- Guild Glory Voting System Logic ---
+  (function() {
+    const serverSettingsNav = document.querySelector('.server-settings-nav');
+    const boostSection = document.querySelector('.server-settings-section-boost');
+    if (!serverSettingsNav || !boostSection) return;
+
+    // GSAP CDN (if not loaded)
+    if (!window.gsap) {
+      const script = document.createElement('script');
+      script.src = 'https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/gsap.min.js';
+      document.head.appendChild(script);
+    }
+
+    let votes = [];
+    let hasVoted = false;
+    const milestones = [
+      { level: 1, votes: 2, cardId: 'card1', milestoneId: 'milestone1' },
+      { level: 2, votes: 5, cardId: 'card2', milestoneId: 'milestone2' },
+      { level: 3, votes: 10, cardId: 'card3', milestoneId: 'milestone3' },
+    ];
+    const USER_ID = localStorage.getItem('user_id') || 'user-' + Math.floor(Math.random()*10000);
+    localStorage.setItem('user_id', USER_ID);
+
+    async function loadVotes() {
+      if (!window.selectedServer) return;
+      // Fetch votes for this server, join users for avatar
+      const { data, error } = await supabase
+        .from('guild_glory_votes')
+        .select('user_id, users: user_id (avatar_url)')
+        .eq('guild_id', window.selectedServer.id);
+      if (error) {
+        votes = [];
+        hasVoted = false;
+        updateUI();
+        return;
+      }
+      votes = (data || []).map(v => ({
+        user_id: v.user_id,
+        avatar_url: v.users?.avatar_url || `https://api.dicebear.com/7.x/pixel-art/svg?seed=${v.user_id}`
+      }));
+      hasVoted = votes.some(v => v.user_id === USER_ID);
+      updateUI();
+    }
+
+    async function castVote() {
+      if (hasVoted || !window.selectedServer) return;
+      // Insert vote
+      const { error } = await supabase.from('guild_glory_votes').insert({
+        guild_id: window.selectedServer.id,
+        user_id: USER_ID
+      });
+      if (error) {
+        alert('Failed to vote: ' + error.message);
+        return;
+      }
+      await loadVotes();
+      hasVoted = true;
+      updateUI(true);
+    }
+
+    function updateUI(justVoted = false) {
+      const progressBar = document.getElementById('gloryProgressBar');
+      const avatarsContainer = document.getElementById('gloryAvatars');
+      const voteBtn = document.getElementById('gloryVoteBtn');
+      const perkUnlock = document.getElementById('gloryPerkUnlock');
+      if (!progressBar || !avatarsContainer || !voteBtn || !perkUnlock) return;
+      const percent = Math.min((votes.length / milestones[milestones.length-1].votes) * 100, 100);
+      progressBar.style.width = percent + '%';
+      avatarsContainer.innerHTML = '';
+      votes.forEach((v, i) => {
+        const img = document.createElement('img');
+        img.src = v.avatar_url;
+        img.className = 'glory-avatar';
+        img.style.animationDelay = (i * 0.08) + 's';
+        avatarsContainer.appendChild(img);
+      });
+      if (hasVoted) {
+        voteBtn.classList.add('voted');
+        voteBtn.textContent = 'Thank you for voting!';
+      } else {
+        voteBtn.classList.remove('voted');
+        voteBtn.textContent = 'Cast My Vote!';
+      }
+      milestones.forEach(m => {
+        const card = document.getElementById(m.cardId);
+        const marker = document.getElementById(m.milestoneId);
+        if (votes.length >= m.votes) {
+          card.classList.add('unlocked');
+          card.classList.remove('locked');
+          marker.classList.add('unlocked');
+          if (justVoted && votes.length === m.votes) {
+            showPerkUnlock(m.level);
+          }
+        } else {
+          card.classList.remove('unlocked');
+          card.classList.add('locked');
+          marker.classList.remove('unlocked');
+        }
+      });
+    }
+
+    function showPerkUnlock(level) {
+      const perkUnlock = document.getElementById('gloryPerkUnlock');
+      if (!perkUnlock) return;
+      perkUnlock.innerHTML = '';
+      const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+      svg.setAttribute('width', '120');
+      svg.setAttribute('height', '120');
+      svg.innerHTML = `
+        <circle cx="60" cy="60" r="50" stroke="#fff" stroke-width="6" fill="none" stroke-dasharray="314" stroke-dashoffset="314"/>
+        <polyline points="40,65 58,80 85,45" stroke="#fff" stroke-width="7" fill="none" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="60" stroke-dashoffset="60"/>
+      `;
+      svg.style.filter = 'drop-shadow(0 0 32px #fff8)';
+      perkUnlock.appendChild(svg);
+      perkUnlock.style.display = 'flex';
+      if (window.gsap) {
+        gsap.to(svg.children[0], { strokeDashoffset: 0, duration: 0.7, ease: 'power2.out' });
+        gsap.to(svg.children[1], { strokeDashoffset: 0, duration: 0.5, delay: 0.7, ease: 'power2.out' });
+      }
+      setTimeout(() => confettiBurst(perkUnlock), 1200);
+      setTimeout(() => { perkUnlock.style.display = 'none'; }, 2200);
+    }
+    function confettiBurst(container) {
+      if (!window.gsap) return;
+      for (let i = 0; i < 18; i++) {
+        const conf = document.createElement('div');
+        conf.className = 'confetti';
+        conf.style.position = 'absolute';
+        conf.style.left = '50%';
+        conf.style.top = '50%';
+        conf.style.width = '10px';
+        conf.style.height = '10px';
+        conf.style.background = `hsl(${Math.random()*360},90%,60%)`;
+        conf.style.borderRadius = '50%';
+        conf.style.opacity = 0.8;
+        container.appendChild(conf);
+        gsap.to(conf, {
+          x: Math.cos((i/18)*2*Math.PI) * (60 + Math.random()*40),
+          y: Math.sin((i/18)*2*Math.PI) * (60 + Math.random()*40),
+          scale: 0.7 + Math.random()*1.2,
+          opacity: 0,
+          duration: 1.1,
+          delay: 0.1,
+          ease: 'power2.out',
+          onComplete: () => conf.remove()
+        });
+      }
+    }
+    function setupGuildGloryEvents() {
+      const voteBtn = document.getElementById('gloryVoteBtn');
+      if (voteBtn) voteBtn.onclick = castVote;
+      loadVotes();
+    }
+    serverSettingsNav.addEventListener('click', function(e) {
+      const li = e.target.closest('li[data-section]');
+      if (!li) return;
+      if (li.dataset.section === 'boost') {
+        setTimeout(setupGuildGloryEvents, 50);
+      }
+    });
+    if (document.querySelector('li[data-section="boost"].active')) {
+      setTimeout(setupGuildGloryEvents, 50);
+    }
+  })();
 });
 
 // Show a temporary feedback message at the top of the server dropdown

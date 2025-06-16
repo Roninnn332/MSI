@@ -2947,47 +2947,327 @@ body {
 }
 
 .server-settings-section-engagement {
-  min-width: 340px;
+  min-width: 540px;
   max-width: 900px;
-  margin-bottom: 18px;
-  overflow-x: auto;
+  margin: 0 auto;
+  position: relative;
+  overflow: hidden;
+  background: linear-gradient(135deg, #5f5fff 0%, #b16cff 50%, #ff6fcb 100%);
+  animation: gloryBgAnim 12s ease-in-out infinite alternate;
+  box-shadow: 0 4px 32px #5f5fff22, 0 2px 8px #ff6fcb22;
 }
-.engagement-charts-row {
-  display: flex;
-  gap: 28px;
-  margin-bottom: 32px;
-  flex-wrap: wrap;
-  width: 100%;
-}
-.engagement-chart-card {
-  background: rgba(34, 30, 48, 0.98);
-  border-radius: 14px;
-  box-shadow: 0 2px 12px var(--shadow);
-  padding: 24px 28px 18px 28px;
-  min-width: 320px;
-  max-width: 100%;
-  flex: 1 1 320px;
-  display: flex;
-  flex-direction: column;
-  align-items: stretch;
-  justify-content: flex-start;
-  overflow-x: auto;
-}
-@media (max-width: 900px) {
+@media (max-width: 1100px) {
   .server-settings-section-engagement {
+    min-width: 0;
     max-width: 98vw;
     padding: 0 2vw;
   }
-  .engagement-charts-row {
+}
+.server-settings-section-engagement::before, .server-settings-section-engagement::after {
+  content: '';
+  position: absolute;
+  width: 100%; height: 100%;
+  pointer-events: none;
+  background: url('data:image/svg+xml;utf8,<svg width="100" height="100" xmlns="http://www.w3.org/2000/svg"><circle cx="10" cy="10" r="2" fill="white" opacity="0.7"/><circle cx="80" cy="30" r="1.5" fill="white" opacity="0.5"/><circle cx="50" cy="80" r="2.5" fill="white" opacity="0.6"/></svg>') repeat;
+  animation: sparkles 20s linear infinite;
+  z-index: 0;
+}
+.server-settings-section-engagement::after {
+  animation-direction: reverse;
+  opacity: 0.5;
+}
+.server-settings-section-engagement > * {
+  position: relative;
+  z-index: 1;
+}
+
+/* --- Guild Glory Voting System Styles --- */
+.glory-hero {
+  text-align: center;
+  margin-top: 20px;
+  margin-bottom: 30px;
+}
+.glory-title {
+  font-size: 2.2rem;
+  font-weight: 900;
+  letter-spacing: 2px;
+  text-shadow: 0 4px 32px #fff3, 0 1px 0 #fff8;
+  animation: titlePop 1s cubic-bezier(.68,-0.55,.27,1.55);
+}
+@keyframes titlePop {
+  0% { transform: scale(0.7) translateY(-40px); opacity: 0; }
+  100% { transform: scale(1) translateY(0); opacity: 1; }
+}
+.glory-subtitle {
+  font-size: 1.1rem;
+  margin-top: 10px;
+  color: #fff9;
+  animation: subtitleFade 1.2s 0.2s both;
+}
+@keyframes subtitleFade {
+  0% { opacity: 0; transform: translateY(20px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+.glory-progress-section {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-bottom: 40px;
+}
+.glory-progress-bar-container {
+  position: relative;
+  width: 100%;
+  max-width: 420px;
+  margin: 30px 0 20px 0;
+}
+.glory-progress-bar-bg {
+  width: 100%;
+  height: 18px;
+  background: #fff2;
+  border-radius: 12px;
+  position: relative;
+  box-shadow: 0 2px 16px #0002;
+  overflow: visible;
+}
+.glory-progress-bar-fill {
+  height: 100%;
+  width: 0%;
+  background: linear-gradient(90deg, #ff6fcb, #5f5fff);
+  border-radius: 12px;
+  box-shadow: 0 0 16px 4px #ff6fcb88, 0 0 32px 8px #5f5fff44;
+  transition: width 0.7s cubic-bezier(.68,-0.55,.27,1.55);
+}
+.glory-milestone {
+  position: absolute;
+  top: 50%;
+  width: 36px; height: 36px;
+  background: #fff;
+  border-radius: 50%;
+  border: 4px solid #b16cff;
+  box-shadow: 0 0 16px #b16cff88;
+  transform: translateY(-50%);
+  z-index: 2;
+  transition: background 0.3s;
+  display: flex; align-items: center; justify-content: center;
+  font-weight: bold;
+  font-size: 1.1rem;
+}
+#milestone1 { left: 10%; }
+#milestone2 { left: 45%; }
+#milestone3 { left: 80%; }
+.glory-milestone.unlocked {
+  background: linear-gradient(135deg, #ff6fcb, #5f5fff);
+  color: #fff;
+  border-color: #fff;
+  box-shadow: 0 0 32px #ff6fcbcc, 0 0 16px #5f5fff99;
+  animation: milestonePop 0.7s;
+}
+@keyframes milestonePop {
+  0% { transform: scale(0.7) translateY(-50%); }
+  80% { transform: scale(1.2) translateY(-50%); }
+  100% { transform: scale(1) translateY(-50%); }
+}
+.glory-avatars {
+  position: absolute;
+  left: 0; right: 0; top: -50px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  pointer-events: none;
+  z-index: 3;
+}
+.glory-avatar {
+  width: 36px; height: 36px;
+  border-radius: 50%;
+  border: 2px solid #fff;
+  margin-right: -10px;
+  box-shadow: 0 2px 8px #0004;
+  background: #fff;
+  object-fit: cover;
+  opacity: 0;
+  transform: scale(0.7);
+  animation: avatarFlyIn 0.7s forwards;
+}
+@keyframes avatarFlyIn {
+  0% { opacity: 0; transform: scale(0.7) translateY(-30px); }
+  100% { opacity: 1; transform: scale(1) translateY(0); }
+}
+.glory-vote-btn {
+  margin-top: 30px;
+  padding: 14px 38px;
+  font-size: 1.1rem;
+  font-weight: 700;
+  border: none;
+  border-radius: 32px;
+  background: linear-gradient(90deg, #ff6fcb, #5f5fff);
+  color: #fff;
+  box-shadow: 0 4px 24px #ff6fcb44, 0 2px 8px #5f5fff33;
+  cursor: pointer;
+  transition: background 0.3s, transform 0.2s;
+  outline: none;
+  position: relative;
+  overflow: hidden;
+}
+.glory-vote-btn:active {
+  transform: scale(0.97);
+}
+.glory-vote-btn.voted {
+  background: #2ecc71;
+  color: #fff;
+  pointer-events: none;
+  animation: btnVoted 0.5s;
+}
+@keyframes btnVoted {
+  0% { background: #ff6fcb; }
+  100% { background: #2ecc71; }
+}
+.glory-vote-info {
+  margin-top: 12px;
+  color: #fff8;
+  font-size: 1rem;
+}
+.glory-milestones {
+  display: flex;
+  justify-content: center;
+  gap: 22px;
+  margin: 40px 0 0 0;
+  flex-wrap: wrap;
+}
+.glory-milestone-card {
+  background: #fff1;
+  border-radius: 24px;
+  box-shadow: 0 2px 16px #0002;
+  padding: 28px 18px 18px 18px;
+  min-width: 180px;
+  max-width: 220px;
+  text-align: center;
+  transition: box-shadow 0.3s, background 0.3s;
+  position: relative;
+  overflow: hidden;
+}
+.glory-milestone-card h2 {
+  font-size: 1.2rem;
+  margin-bottom: 6px;
+  color: #fff;
+}
+.glory-milestone-card p {
+  color: #ff6fcb;
+  font-weight: bold;
+  margin-bottom: 12px;
+}
+.glory-milestone-card ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+.glory-milestone-card li {
+  font-size: 1rem;
+  margin: 8px 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  color: #fff;
+}
+.perk-icon {
+  font-size: 1.2em;
+  filter: drop-shadow(0 2px 4px #ff6fcb88);
+}
+.glory-milestone-card.locked {
+  background: #fff2;
+  color: #fff7;
+  filter: grayscale(0.7);
+}
+.glory-milestone-card.unlocked {
+  background: linear-gradient(135deg, #ff6fcb 0%, #5f5fff 100%);
+  color: #fff;
+  box-shadow: 0 0 32px #ff6fcbcc, 0 0 16px #5f5fff99;
+  animation: cardUnlock 0.7s;
+}
+@keyframes cardUnlock {
+  0% { transform: scale(0.7) rotateY(30deg); }
+  80% { transform: scale(1.1) rotateY(-10deg); }
+  100% { transform: scale(1) rotateY(0); }
+}
+.glory-perk-unlock {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+  z-index: 100;
+}
+@media (max-width: 900px) {
+  .glory-milestones {
     flex-direction: column;
+    align-items: center;
     gap: 18px;
-    width: 100%;
   }
-  .engagement-chart-card {
-    min-width: 0;
-    width: 100%;
-    padding: 18px 10px;
-    overflow-x: auto;
+  .glory-progress-bar-container {
+    width: 95vw;
+    max-width: 98vw;
   }
 }
-  
+@media (max-width: 600px) {
+  .glory-title { font-size: 1.3rem; }
+  .glory-milestone-card { padding: 14px 4px; min-width: 120px; }
+  .glory-progress-bar-container { margin: 10px 0 6px 0; }
+}
+
+/* --- Guild Glory Voting System Section Width & Background --- */
+.server-settings-section-boost {
+  min-width: 540px;
+  max-width: 900px;
+  margin: 0 auto;
+  position: relative;
+  overflow: hidden;
+  background: linear-gradient(135deg, #5f5fff 0%, #b16cff 50%, #ff6fcb 100%);
+  animation: gloryBgAnim 12s ease-in-out infinite alternate;
+  box-shadow: 0 4px 32px #5f5fff22, 0 2px 8px #ff6fcb22;
+}
+@media (max-width: 1100px) {
+  .server-settings-section-boost {
+    min-width: 0;
+    max-width: 98vw;
+    padding: 0 2vw;
+  }
+}
+@keyframes gloryBgAnim {
+  0% { background-position: 0% 50%; filter: hue-rotate(0deg); }
+  50% { background-position: 100% 50%; filter: hue-rotate(30deg); }
+  100% { background-position: 0% 50%; filter: hue-rotate(60deg); }
+}
+/* Optionally, add floating sparkles */
+.server-settings-section-boost::before, .server-settings-section-boost::after {
+  content: '';
+  position: absolute;
+  width: 100%; height: 100%;
+  pointer-events: none;
+  background: url('data:image/svg+xml;utf8,<svg width="100" height="100" xmlns="http://www.w3.org/2000/svg"><circle cx="10" cy="10" r="2" fill="white" opacity="0.7"/><circle cx="80" cy="30" r="1.5" fill="white" opacity="0.5"/><circle cx="50" cy="80" r="2.5" fill="white" opacity="0.6"/></svg>') repeat;
+  animation: sparkles 20s linear infinite;
+  z-index: 0;
+}
+.server-settings-section-boost::after {
+  animation-direction: reverse;
+  opacity: 0.5;
+}
+@keyframes sparkles {
+  0% { background-position: 0 0; }
+  100% { background-position: 100px 200px; }
+}
+/* Ensure content is above background */
+.server-settings-section-boost > * {
+  position: relative;
+  z-index: 1;
+}
+/* Make progress bar and milestones wider */
+.server-settings-section-boost .glory-progress-bar-container {
+  max-width: 700px;
+  width: 90%;
+}
+.server-settings-section-boost .glory-milestones {
+  max-width: 900px;
+  width: 100%;
+  justify-content: space-between;
+}
