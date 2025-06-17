@@ -520,9 +520,9 @@ function renderDmMessages(messages, friendName, friendAvatar, friendStatus) {
     lastTime = msg.created_at;
   });
   messagesSection.scrollTop = messagesSection.scrollHeight;
-  if (normalizedMessages.length === 0) {
-    showWelcomeMessage();
-  }
+  const chatInput = document.querySelector('.chat-input');
+  if (chatInput) chatInput.style.display = '';
+  hideWelcomeMessage();
 }
 
 function formatFullTime(dateStr) {
