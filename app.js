@@ -1,7 +1,5 @@
-// Remove the import line for Supabase
-// import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm';
-
 const SUPABASE_URL = 'https://tmqwjmebyiqqgevsaquh.supabase.co';
+
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRtcXdqbWVieWlxcWdldnNhcXVoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDk3Mzk2OTMsImV4cCI6MjA2NTMxNTY5M30.W_cxVD4is0GFUql8UqAafM8Tx8rSvP_aeLBDLpqjOuo';
 const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
@@ -860,6 +858,11 @@ document.addEventListener('DOMContentLoaded', function() {
           console.error('Failed to add creator as server member:', memberError.message);
           alert('Failed to add you as a server member: ' + memberError.message);
         }
+        // --- BULLETPROOF: Create default channels immediately after server creation ---
+        await supabase.from('channels').insert([
+          { server_id: newServer.id, name: 'general', type: 'text', is_private: false },
+          { server_id: newServer.id, name: 'General', type: 'voice', is_private: false }
+        ]);
       }
       // Hide modal and all options
       closeModal();
@@ -2042,6 +2045,511 @@ document.addEventListener('DOMContentLoaded', function() {
       setTimeout(setupGuildGloryEvents, 50);
     }
   })();
+
+  // --- PROFILE SETTINGS PANEL LOGIC ---
+  const profileSettingsPanel = document.getElementById('profile-settings-panel');
+  const profileSettingsClose = document.querySelector('.profile-settings-close');
+  const profileSettingsNav = document.querySelector('.profile-settings-nav');
+  const profileSettingsSectionTitle = document.querySelector('.profile-settings-section-title');
+  const profileSettingsContents = document.querySelectorAll('.profile-settings-content');
+  const profileSettingsNameInput = document.querySelector('.profile-settings-name-input');
+  const profileSettingsAvatarPreview = document.querySelector('.profile-settings-avatar-preview');
+  const profileSettingsAvatarBtn = document.querySelector('.profile-settings-avatar-btn');
+  const profileSettingsBioInput = document.querySelector('.profile-settings-bio-input');
+  const profileSettingsSaveBtn = document.querySelector('.profile-settings-save-btn');
+  const profileSettingsFeedback = document.querySelector('.profile-settings-feedback');
+  const profileSettingsPreviewBanner = document.querySelector('.profile-settings-preview-banner');
+  const profileSettingsPreviewAvatar = document.querySelector('.profile-settings-preview-avatar img');
+  const profileSettingsPreviewName = document.querySelector('.profile-settings-preview-name');
+  const profileSettingsPreviewMeta = document.querySelector('.profile-settings-preview-meta');
+  const profileSettingsPreviewId = document.querySelector('.profile-settings-preview-id');
+  const profileSettingsPreviewBio = document.querySelector('.profile-settings-preview-bio');
+  const statusToggleInput = document.querySelector('.status-toggle-input');
+
+  const moreProfileSettingsBtn = document.querySelector('.more-profile-settings-btn');
+  if (moreProfileSettingsBtn) {
+    moreProfileSettingsBtn.addEventListener('click', openProfileSettingsPanel);
+  }
+  function openProfileSettingsPanel() {
+    // Fill with current user data
+    const displayName = localStorage.getItem('display_name') || 'Username';
+    const avatarUrl = document.querySelector('.profile-avatar')?.src || '';
+    const bio = document.querySelector('.profile-bio')?.textContent || '';
+    const userId = localStorage.getItem('user_id') || '#0000';
+    const bannerImg = document.querySelector('.profile-banner');
+    const bannerVideo = document.querySelector('.profile-banner-video');
+    let bannerUrl = '';
+    let isVideo = false;
+    if (bannerImg && bannerImg.style.display !== 'none' && bannerImg.src) {
+      bannerUrl = bannerImg.src;
+      isVideo = false;
+    } else if (bannerVideo && bannerVideo.style.display !== 'none' && bannerVideo.src) {
+      bannerUrl = bannerVideo.src;
+      isVideo = true;
+    }
+    // Inputs
+    profileSettingsNameInput.value = displayName;
+    profileSettingsAvatarPreview.src = avatarUrl;
+    profileSettingsBioInput.value = bio;
+    // Preview
+    profileSettingsPreviewAvatar.src = avatarUrl;
+    profileSettingsPreviewName.textContent = displayName;
+    profileSettingsPreviewId.textContent = userId.length > 12 ? userId.slice(0, 6) + '...' + userId.slice(-4) : userId;
+    profileSettingsPreviewBio.textContent = bio;
+    // Banner preview logic
+    if (isVideo && bannerUrl) {
+      // Remove any previous video
+      let previewVideo = profileSettingsPreviewBanner.querySelector('video');
+      if (!previewVideo) {
+        previewVideo = document.createElement('video');
+        previewVideo.autoplay = true;
+        previewVideo.loop = true;
+        previewVideo.muted = true;
+        previewVideo.playsInline = true;
+        previewVideo.style.width = '100%';
+        previewVideo.style.height = '100%';
+        previewVideo.style.objectFit = 'cover';
+        previewVideo.style.objectPosition = 'center';
+        previewVideo.style.borderRadius = 'inherit';
+        profileSettingsPreviewBanner.appendChild(previewVideo);
+      }
+      previewVideo.src = bannerUrl;
+      previewVideo.style.display = 'block';
+      profileSettingsPreviewBanner.style.background = '';
+    } else if (bannerUrl) {
+      // Remove any preview video
+      const previewVideo = profileSettingsPreviewBanner.querySelector('video');
+      if (previewVideo) previewVideo.remove();
+      profileSettingsPreviewBanner.style.background = `url('${bannerUrl}') center/cover no-repeat`;
+    } else {
+      // Remove any preview video
+      const previewVideo = profileSettingsPreviewBanner.querySelector('video');
+      if (previewVideo) previewVideo.remove();
+      profileSettingsPreviewBanner.style.background = 'linear-gradient(90deg, var(--accent) 0%, #232129 100%)';
+    }
+    // Status
+    const status = statusToggleInput && statusToggleInput.checked ? 'Online' : 'Invisible';
+    const statusDot = document.querySelector('.profile-settings-preview-status .status-dot');
+    const statusLabel = document.querySelector('.profile-settings-preview-status .status-label');
+    if (statusDot && statusLabel) {
+      if (status === 'Online') {
+        statusDot.classList.add('online');
+        statusDot.classList.remove('offline');
+        statusLabel.textContent = 'Online';
+        statusLabel.style.color = 'var(--online)';
+      } else {
+        statusDot.classList.remove('online');
+        statusDot.classList.add('offline');
+        statusLabel.textContent = 'Invisible';
+        statusLabel.style.color = '#888';
+      }
+    }
+    profileSettingsPanel.style.display = 'flex';
+    document.body.style.overflow = 'hidden';
+    // Show main section by default
+    profileSettingsContents.forEach(c => c.style.display = c.classList.contains('profile-settings-section-main') ? '' : 'none');
+    profileSettingsSectionTitle.textContent = 'Main Profile';
+    profileSettingsNav.querySelectorAll('li').forEach(li => li.classList.remove('active'));
+    profileSettingsNav.querySelector('li[data-section="main"]').classList.add('active');
+    updateProfileSettingsScrollBar();
+  }
+  function closeProfileSettingsPanel() {
+    profileSettingsPanel.style.display = 'none';
+    document.body.style.overflow = '';
+  }
+  if (profileSettingsClose) {
+    profileSettingsClose.addEventListener('click', closeProfileSettingsPanel);
+  }
+  document.addEventListener('keydown', function(e) {
+    if (profileSettingsPanel.style.display === 'flex' && (e.key === 'Escape' || e.key === 'Esc')) {
+      closeProfileSettingsPanel();
+    }
+  });
+  if (profileSettingsNav) {
+    profileSettingsNav.addEventListener('click', function(e) {
+      const li = e.target.closest('li[data-section]');
+      if (!li) return;
+      profileSettingsNav.querySelectorAll('li').forEach(l => l.classList.remove('active'));
+      li.classList.add('active');
+      const section = li.dataset.section;
+      profileSettingsContents.forEach(c => c.style.display = c.classList.contains('profile-settings-section-' + section) ? '' : 'none');
+      profileSettingsSectionTitle.textContent = li.textContent;
+    });
+  }
+  // Live update preview on name/avatar/bio/banner/status change
+  if (profileSettingsNameInput) {
+    profileSettingsNameInput.addEventListener('input', function() {
+      profileSettingsPreviewName.textContent = profileSettingsNameInput.value;
+    });
+  }
+  if (profileSettingsAvatarPreview) {
+    profileSettingsAvatarPreview.addEventListener('load', function() {
+      profileSettingsPreviewAvatar.src = profileSettingsAvatarPreview.src;
+    });
+  }
+  if (profileSettingsBioInput) {
+    profileSettingsBioInput.addEventListener('input', function() {
+      profileSettingsPreviewBio.textContent = profileSettingsBioInput.value;
+    });
+  }
+  if (statusToggleInput) {
+    statusToggleInput.addEventListener('change', function() {
+      const statusDot = document.querySelector('.profile-settings-preview-status .status-dot');
+      const statusLabel = document.querySelector('.profile-settings-preview-status .status-label');
+      if (statusToggleInput.checked) {
+        statusDot.classList.add('online');
+        statusDot.classList.remove('offline');
+        statusLabel.textContent = 'Online';
+        statusLabel.style.color = 'var(--online)';
+      } else {
+        statusDot.classList.remove('online');
+        statusDot.classList.add('offline');
+        statusLabel.textContent = 'Invisible';
+        statusLabel.style.color = '#888';
+      }
+    });
+  }
+  // Banner live update (if you add a banner picker, update .profile-settings-preview-banner.style.background)
+  // ... existing code ...
+  // Save changes (display name, avatar, bio)
+  if (profileSettingsSaveBtn) {
+    profileSettingsSaveBtn.addEventListener('click', async function() {
+      const newName = profileSettingsNameInput.value.trim();
+      const newBio = profileSettingsBioInput.value.trim();
+      // For avatar, just use the preview src for now
+      const newAvatarUrl = profileSettingsAvatarPreview.src;
+      profileSettingsSaveBtn.disabled = true;
+      profileSettingsFeedback.textContent = 'Saving...';
+      profileSettingsFeedback.classList.add('show');
+      try {
+        await supabase.from('users').update({
+          display_name: newName,
+          bio: newBio,
+          avatar_url: newAvatarUrl
+        }).eq('id', localStorage.getItem('user_id'));
+        profileSettingsFeedback.textContent = 'Saved!';
+        setTimeout(() => profileSettingsFeedback.classList.remove('show'), 1200);
+        // Update localStorage and profile UI
+        localStorage.setItem('display_name', newName);
+        document.querySelector('.profile-name').textContent = newName;
+        document.querySelector('.profile-bio').textContent = newBio;
+        document.querySelector('.profile-avatar').src = newAvatarUrl;
+      } catch (err) {
+        profileSettingsFeedback.textContent = 'Failed to save.';
+        setTimeout(() => profileSettingsFeedback.classList.remove('show'), 1800);
+      }
+      profileSettingsSaveBtn.disabled = false;
+    });
+  }
+  // Avatar change (reuse cropper if available, else just file input for now)
+  if (profileSettingsAvatarBtn) {
+    profileSettingsAvatarBtn.addEventListener('click', function() {
+      const input = document.createElement('input');
+      input.type = 'file';
+      input.accept = 'image/*';
+      input.onchange = async function(e) {
+        const file = e.target.files[0];
+        if (!file) return;
+        // For now, just use a local URL preview
+        const url = URL.createObjectURL(file);
+        profileSettingsAvatarPreview.src = url;
+        profileSettingsPreviewAvatar.src = url;
+      };
+      input.click();
+    });
+  }
+
+  // --- PROFILE SETTINGS PANEL ENHANCED INTERACTIVITY ---
+  // Accent color picker
+  const accentColorSwatches = document.querySelectorAll('.accent-color-swatch');
+  if (accentColorSwatches.length) {
+    accentColorSwatches.forEach(swatch => {
+      swatch.addEventListener('click', function() {
+        accentColorSwatches.forEach(s => s.classList.remove('selected'));
+        swatch.classList.add('selected');
+        document.documentElement.style.setProperty('--accent', swatch.dataset.color);
+        document.documentElement.style.setProperty('--accent-hover', swatch.dataset.color);
+        // Optionally save to localStorage or backend
+      });
+    });
+    // Set initial selection
+    const currentAccent = getComputedStyle(document.documentElement).getPropertyValue('--accent').trim();
+    let found = false;
+    accentColorSwatches.forEach(swatch => {
+      if (swatch.dataset.color === currentAccent) {
+        swatch.classList.add('selected');
+        found = true;
+      }
+    });
+    if (!found) accentColorSwatches[0].classList.add('selected');
+  }
+  // Online status toggle
+  if (statusToggleInput) {
+    statusToggleInput.addEventListener('change', function() {
+      const label = document.querySelector('.status-label');
+      if (statusToggleInput.checked) {
+        label.textContent = 'Online';
+        label.style.color = 'var(--online)';
+      } else {
+        label.textContent = 'Invisible';
+        label.style.color = '#888';
+      }
+      // Optionally save to backend/localStorage
+    });
+  }
+  // Theme switcher
+  const themeToggleInput = document.querySelector('.theme-toggle-input');
+  if (themeToggleInput) {
+    themeToggleInput.addEventListener('change', function() {
+      if (themeToggleInput.checked) {
+        document.body.classList.remove('light-theme');
+        document.body.classList.add('dark-theme');
+      } else {
+        document.body.classList.remove('dark-theme');
+        document.body.classList.add('light-theme');
+      }
+      // Optionally save to localStorage or backend
+    });
+  }
+  // Animated nav icon transitions (subtle pop on nav switch)
+  if (profileSettingsNav) {
+    profileSettingsNav.addEventListener('click', function(e) {
+      const li = e.target.closest('li[data-section]');
+      if (!li) return;
+      const icon = li.querySelector('.animated-icon');
+      if (icon) {
+        icon.style.transform = 'scale(1.18)';
+        setTimeout(() => { icon.style.transform = ''; }, 320);
+      }
+    });
+  }
+  // Section transition animation
+  profileSettingsContents.forEach(section => {
+    section.addEventListener('transitionstart', function() {
+      section.style.animation = 'profileSettingsContentPop 0.44s cubic-bezier(.4,0,.2,1)';
+      setTimeout(() => { section.style.animation = ''; }, 440);
+    });
+  });
+
+  // --- PROFILE SETTINGS PANEL SCROLL INDICATOR ---
+  const profileSettingsMain = document.querySelector('.profile-settings-main');
+  const scrollIndicator = document.querySelector('.profile-settings-scroll-indicator');
+  const scrollBar = document.querySelector('.profile-settings-scroll-bar');
+  function updateProfileSettingsScrollBar() {
+    if (!profileSettingsMain || !scrollIndicator || !scrollBar) return;
+    const scrollHeight = profileSettingsMain.scrollHeight;
+    const clientHeight = profileSettingsMain.clientHeight;
+    const scrollTop = profileSettingsMain.scrollTop;
+    if (scrollHeight <= clientHeight) {
+      scrollBar.style.height = '0px';
+      scrollBar.style.top = '0px';
+      scrollBar.style.opacity = '0';
+      return;
+    }
+    const barHeight = Math.max(32, clientHeight * clientHeight / scrollHeight);
+    const barTop = scrollTop * (clientHeight - barHeight) / (scrollHeight - clientHeight);
+    scrollBar.style.height = barHeight + 'px';
+    scrollBar.style.top = barTop + 'px';
+    scrollBar.style.opacity = '1';
+  }
+  if (profileSettingsMain && scrollBar) {
+    profileSettingsMain.addEventListener('scroll', updateProfileSettingsScrollBar);
+    window.addEventListener('resize', updateProfileSettingsScrollBar);
+    setTimeout(updateProfileSettingsScrollBar, 200);
+  }
+
+  // --- SEARCH BAR LOGIC ---
+  const searchBtn = document.querySelector('.search-btn');
+  const searchBarContainer = document.querySelector('.search-bar-container');
+  const searchBarInput = document.querySelector('.search-bar-input');
+  const searchBarClose = document.querySelector('.search-bar-close');
+  console.log('searchBtn:', searchBtn);
+  console.log('searchBarContainer:', searchBarContainer);
+  console.log('searchBarInput:', searchBarInput);
+  console.log('searchBarClose:', searchBarClose);
+
+  function openSearchBar() {
+    console.log('openSearchBar called');
+    if (!searchBarContainer) return;
+    searchBarContainer.style.display = '';
+    setTimeout(() => {
+      searchBarContainer.classList.add('active');
+      if (searchBarInput) searchBarInput.focus();
+    }, 10);
+  }
+  function closeSearchBar() {
+    console.log('closeSearchBar called');
+    if (!searchBarContainer) return;
+    searchBarContainer.classList.remove('active');
+    setTimeout(() => {
+      searchBarContainer.style.display = 'none';
+      if (searchBarInput) searchBarInput.value = '';
+    }, 350);
+  }
+  if (searchBtn) {
+    searchBtn.addEventListener('click', function() {
+      console.log('searchBtn clicked');
+      openSearchBar();
+    });
+  }
+  if (searchBarClose) {
+    searchBarClose.addEventListener('click', function() {
+      console.log('searchBarClose clicked');
+      closeSearchBar();
+    });
+  }
+  document.addEventListener('keydown', function(e) {
+    if (searchBarContainer && searchBarContainer.classList.contains('active') && e.key === 'Escape') {
+      console.log('Escape pressed, closing search bar');
+      closeSearchBar();
+    }
+  });
+
+  // --- CREATE CHANNEL MODAL LOGIC ---
+  const createChannelModal = document.getElementById('create-channel-modal');
+  const channelModalClose = document.querySelector('.channel-modal-close');
+  const channelModalCancel = document.querySelector('.channel-modal-cancel');
+  const channelModalCreate = document.querySelector('.channel-modal-create');
+  const channelNameInput = document.getElementById('channel-name');
+  const channelTypeRadios = document.getElementsByName('channel-type');
+  const privateChannelToggle = document.getElementById('private-channel-toggle');
+  let channelModalOpen = false;
+
+  const channelModalFeedback = document.getElementById('channel-modal-feedback');
+
+  function showChannelModalFeedback(msg, type) {
+    if (!channelModalFeedback) return;
+    channelModalFeedback.textContent = msg;
+    channelModalFeedback.className = 'channel-modal-feedback ' + (type === 'error' ? 'error' : 'success');
+  }
+  function clearChannelModalFeedback() {
+    if (!channelModalFeedback) return;
+    channelModalFeedback.textContent = '';
+    channelModalFeedback.className = 'channel-modal-feedback';
+  }
+
+  function openCreateChannelModal() {
+    if (!window.selectedServer) return;
+    const ownerId = window.selectedServer.owner_id || (window.selectedServer.owner && window.selectedServer.owner.id);
+    const userId = localStorage.getItem('user_id');
+    if (ownerId !== userId) {
+      createChannelModal.style.display = 'flex';
+      createChannelModal.classList.add('modal-open');
+      channelModalOpen = true;
+      channelNameInput.value = '';
+      channelModalCreate.disabled = true;
+      channelTypeRadios[0].checked = true;
+      privateChannelToggle.checked = false;
+      showChannelModalFeedback('Only the server owner can create channels.', 'error');
+      setTimeout(() => {
+        closeCreateChannelModal();
+      }, 2200);
+      document.body.style.overflow = 'hidden';
+      return;
+    }
+    createChannelModal.style.display = 'flex';
+    createChannelModal.classList.add('modal-open');
+    channelModalOpen = true;
+    channelNameInput.value = '';
+    channelModalCreate.disabled = true;
+    channelTypeRadios[0].checked = true;
+    privateChannelToggle.checked = false;
+    clearChannelModalFeedback();
+    setTimeout(() => channelNameInput.focus(), 10);
+    document.body.style.overflow = 'hidden';
+  }
+  function closeCreateChannelModal() {
+    createChannelModal.classList.remove('modal-open');
+    setTimeout(() => {
+      createChannelModal.style.display = 'none';
+      document.body.style.overflow = '';
+      channelModalOpen = false;
+      clearChannelModalFeedback();
+    }, 320);
+  }
+  if (channelModalClose) channelModalClose.addEventListener('click', closeCreateChannelModal);
+  if (channelModalCancel) channelModalCancel.addEventListener('click', closeCreateChannelModal);
+  createChannelModal.addEventListener('mousedown', function(e) {
+    if (e.target === createChannelModal) closeCreateChannelModal();
+  });
+  document.addEventListener('keydown', function(e) {
+    if (channelModalOpen && e.key === 'Escape') closeCreateChannelModal();
+  });
+  channelNameInput.addEventListener('input', function() {
+    channelModalCreate.disabled = !channelNameInput.value.trim();
+    clearChannelModalFeedback();
+  });
+  // Modal open from dropdown
+  const createChannelOption = Array.from(document.querySelectorAll('.dropdown-option')).find(opt => opt.textContent.trim().toLowerCase() === 'create channel');
+  if (createChannelOption) {
+    createChannelOption.addEventListener('click', function(e) {
+      e.stopPropagation();
+      openCreateChannelModal();
+      const dropdownMenu = document.querySelector('.server-dropdown-menu');
+      if (dropdownMenu) dropdownMenu.classList.remove('open');
+    });
+  }
+  // Create channel in Supabase
+  if (channelModalCreate) {
+    channelModalCreate.addEventListener('click', async function() {
+      if (!window.selectedServer) return;
+      const ownerId = window.selectedServer.owner_id || (window.selectedServer.owner && window.selectedServer.owner.id);
+      const userId = localStorage.getItem('user_id');
+      if (ownerId !== userId) {
+        showChannelModalFeedback('Only the server owner can create channels.', 'error');
+        return;
+      }
+      const name = channelNameInput.value.trim();
+      const type = Array.from(channelTypeRadios).find(r => r.checked)?.value || 'text';
+      const isPrivate = privateChannelToggle.checked;
+      if (!name) return;
+      channelModalCreate.disabled = true;
+      channelModalCreate.textContent = 'Creating...';
+      try {
+        await supabase.from('channels').insert({
+          server_id: window.selectedServer.id,
+          name,
+          type,
+          is_private: isPrivate
+        });
+        showChannelModalFeedback('Channel created!', 'success');
+        setTimeout(() => {
+          closeCreateChannelModal();
+          if (typeof renderServerChannels === 'function') renderServerChannels(window.selectedServer);
+        }, 900);
+      } catch (err) {
+        showChannelModalFeedback('Failed to create channel: ' + err.message, 'error');
+      }
+      channelModalCreate.textContent = 'Create Channel';
+      channelModalCreate.disabled = false;
+    });
+  }
+  // --- DEFAULT CHANNELS ON SERVER CREATION ---
+  const originalCreateBtnHandler = createBtn.onclick || createBtn._originalHandler;
+  createBtn._originalHandler = originalCreateBtnHandler;
+  createBtn.onclick = async function(e) {
+    if (originalCreateBtnHandler) await originalCreateBtnHandler.call(this, e);
+    // After server is created, add default channels
+    try {
+      // Find the most recently created server for this user
+      const ownerId = localStorage.getItem('user_id');
+      const { data: servers } = await supabase.from('servers').select('*').eq('owner_id', ownerId).order('created_at', { ascending: false }).limit(1);
+      const newServer = servers && servers[0];
+      if (newServer) {
+        // Insert default text and voice channels
+        await supabase.from('channels').insert([
+          { server_id: newServer.id, name: 'general', type: 'text', is_private: false },
+          { server_id: newServer.id, name: 'General', type: 'voice', is_private: false }
+        ]);
+        // Optionally refresh channel list if this server is selected
+        if (window.selectedServer && window.selectedServer.id === newServer.id && typeof renderServerChannels === 'function') {
+          renderServerChannels(newServer);
+        }
+      }
+    } catch (err) {
+      console.error('Failed to create default channels:', err.message);
+    }
+  };
 });
 
 // Show a temporary feedback message at the top of the server dropdown
@@ -2071,4 +2579,43 @@ function showInviteCopyFeedback(msg) {
   setTimeout(() => {
     feedback.style.opacity = '0';
   }, 1400);
-} 
+}
+
+// Banner live update (if you add a banner picker, update .profile-settings-preview-banner.style.background)
+const profileBanner = document.querySelector('.profile-banner');
+if (profileBanner) {
+  profileBanner.addEventListener('load', function() {
+    if (profileBanner.style.display !== 'none' && typeof profileSettingsPreviewBanner !== 'undefined' && profileSettingsPreviewBanner) {
+      // Remove any preview video
+      const previewVideo = profileSettingsPreviewBanner.querySelector('video');
+      if (previewVideo) previewVideo.remove();
+      profileSettingsPreviewBanner.style.background = `url('${profileBanner.src}') center/cover no-repeat`;
+    }
+  });
+}
+// Live update for banner video
+const profileBannerVideo = document.querySelector('.profile-banner-video');
+if (profileBannerVideo) {
+  profileBannerVideo.addEventListener('loadeddata', function() {
+    if (profileBannerVideo.style.display !== 'none' && typeof profileSettingsPreviewBanner !== 'undefined' && profileSettingsPreviewBanner) {
+      // Remove any previous video
+      let previewVideo = profileSettingsPreviewBanner.querySelector('video');
+      if (!previewVideo) {
+        previewVideo = document.createElement('video');
+        previewVideo.autoplay = true;
+        previewVideo.loop = true;
+        previewVideo.muted = true;
+        previewVideo.playsInline = true;
+        previewVideo.style.width = '100%';
+        previewVideo.style.height = '100%';
+        previewVideo.style.objectFit = 'cover';
+        previewVideo.style.objectPosition = 'center';
+        previewVideo.style.borderRadius = 'inherit';
+        profileSettingsPreviewBanner.appendChild(previewVideo);
+      }
+      previewVideo.src = profileBannerVideo.src;
+      previewVideo.style.display = 'block';
+      profileSettingsPreviewBanner.style.background = '';
+    }
+  });
+}

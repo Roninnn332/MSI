@@ -141,6 +141,7 @@
         </button>
         <button class="logout-account-btn">Logout</button>
         <button class="join-server-btn">Join Server</button>
+        <button class="more-profile-settings-btn">More Setting</button>
         <button class="delete-account-btn">Delete Account</button>
         <div class="delete-caution">⚠️ Deleting your account is permanent and cannot be undone.</div>
       </div>
@@ -256,7 +257,6 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
   <script src="https://cdn.jsdelivr.net/npm/cropperjs@1.5.13/dist/cropper.min.js"></script>
   <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
-  <script src="app.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.2/dist/chart.umd.min.js"></script>
 
   <!-- Cropper Modal -->
@@ -455,7 +455,7 @@
       <div class="server-settings-content server-settings-section-members" style="display:none;">
         <h2>Server Members</h2>
         <div class="server-members-info-banner">
-          <img src="https://cdn.discordapp.com/attachments/1100000000000000000/112233445566778899/party.png" alt="Info" class="server-members-info-img" />
+          <img src="assets/19362653.jpg" alt="Info" class="server-members-info-img" />
           <div class="server-members-info-text">
             <strong>Show Members In Channel List</strong><br>
             Enabling this will show the members page in the channel list, allowing you to quickly see who's recently joined your server, and find any users flagged for unusual activity.
@@ -501,5 +501,157 @@
       </div>
     </div>
   </div>
+  <!-- Full-screen Profile Settings Panel -->
+  <div id="profile-settings-panel" class="profile-settings-panel" style="display:none;">
+    <div class="profile-settings-sidebar">
+      <div class="profile-settings-title">PROFILE SETTINGS</div>
+      <ul class="profile-settings-nav">
+        <li class="active" data-section="main">Main Profile</li>
+        <li data-section="privacy">Privacy & Security</li>
+        <li data-section="appearance">Appearance</li>
+        <li data-section="notifications">Notifications</li>
+        <div class="profile-settings-divider">ACCOUNT</div>
+        <li data-section="connections">Connections</li>
+        <li data-section="sessions">Sessions</li>
+      </ul>
+    </div>
+    <div class="profile-settings-main">
+      <div class="profile-settings-header">
+        <span class="profile-settings-section-title">Main Profile</span>
+        <button class="profile-settings-close" title="Close">&times; <span class="esc-label">ESC</span></button>
+      </div>
+      <div class="profile-settings-content profile-settings-section-main">
+        <h2><svg class="animated-icon" width="28" height="28" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" fill="none" stroke="var(--accent)" stroke-width="2"><animate attributeName="r" values="10;12;10" dur="1.6s" repeatCount="indefinite"/></circle><circle cx="12" cy="12" r="5" fill="var(--accent)" opacity="0.18"><animate attributeName="opacity" values="0.18;0.32;0.18" dur="1.6s" repeatCount="indefinite"/></circle></svg> Main Profile</h2>
+        <p class="profile-settings-desc">Manage your display name, avatar, and bio. All changes are instantly saved and reflected across the app.</p>
+        <label class="profile-settings-label">Display Name</label>
+        <input type="text" class="profile-settings-name-input" />
+        <label class="profile-settings-label">Avatar</label>
+        <div class="profile-settings-avatar-row">
+          <div class="avatar-anim-wrapper">
+            <img src="" class="profile-settings-avatar-preview" alt="Avatar" />
+            <div class="avatar-upload-anim"></div>
+          </div>
+          <button class="profile-settings-avatar-btn">Change Avatar</button>
+        </div>
+        <label class="profile-settings-label">Accent Color</label>
+        <div class="accent-color-picker">
+          <div class="accent-color-swatch" data-color="#b39ddb" style="background:#b39ddb;"></div>
+          <div class="accent-color-swatch" data-color="#ff5fa2" style="background:#ff5fa2;"></div>
+          <div class="accent-color-swatch" data-color="#4fd8ff" style="background:#4fd8ff;"></div>
+          <div class="accent-color-swatch" data-color="#ffd84d" style="background:#ffd84d;"></div>
+          <div class="accent-color-swatch" data-color="#7ed957" style="background:#7ed957;"></div>
+        </div>
+        <label class="profile-settings-label">Online Status</label>
+        <div class="status-toggle-row">
+          <span class="status-label">Online</span>
+          <label class="switch-anim">
+            <input type="checkbox" class="status-toggle-input" checked>
+            <span class="slider-anim"></span>
+          </label>
+        </div>
+        <label class="profile-settings-label">Bio</label>
+        <textarea class="profile-settings-bio-input" rows="3"></textarea>
+        <div class="profile-settings-save-row">
+          <button class="profile-settings-save-btn">Save Changes</button>
+          <span class="profile-settings-feedback"></span>
+        </div>
+        <div class="profile-settings-scroll-indicator">
+          <div class="profile-settings-scroll-bar"></div>
+        </div>
+      </div>
+      <div class="profile-settings-content profile-settings-section-privacy" style="display:none;">
+        <h2><svg class="animated-icon" width="28" height="28" viewBox="0 0 24 24"><rect x="4" y="8" width="16" height="10" rx="3" fill="none" stroke="var(--accent)" stroke-width="2"><animate attributeName="rx" values="3;5;3" dur="1.6s" repeatCount="indefinite"/></rect><circle cx="12" cy="13" r="2.5" fill="var(--accent)" opacity="0.18"><animate attributeName="opacity" values="0.18;0.32;0.18" dur="1.6s" repeatCount="indefinite"/></circle></svg> Privacy & Security</h2>
+        <p class="profile-settings-desc">Control who can see your profile and activity, and manage your account security.</p>
+        <div class="toggle-row"><span>Profile Visible</span><label class="switch-anim"><input type="checkbox" checked><span class="slider-anim"></span></label></div>
+        <div class="toggle-row"><span>Enable 2FA</span><label class="switch-anim"><input type="checkbox"><span class="slider-anim"></span></label></div>
+      </div>
+      <div class="profile-settings-content profile-settings-section-appearance" style="display:none;">
+        <h2><svg class="animated-icon" width="28" height="28" viewBox="0 0 24 24"><path d="M12 2v20M2 12h20" stroke="var(--accent)" stroke-width="2" fill="none"><animate attributeName="stroke-width" values="2;3;2" dur="1.6s" repeatCount="indefinite"/></path></svg> Appearance</h2>
+        <p class="profile-settings-desc">Personalize your app theme, accent color, and more.</p>
+        <div class="theme-switch-row">
+          <span>Dark Theme</span>
+          <label class="switch-anim">
+            <input type="checkbox" class="theme-toggle-input" checked>
+            <span class="slider-anim"></span>
+          </label>
+        </div>
+        <div class="color-palette-row">
+          <div class="palette-color" style="background:#232129;"></div>
+          <div class="palette-color" style="background:#b39ddb;"></div>
+          <div class="palette-color" style="background:#ff5fa2;"></div>
+          <div class="palette-color" style="background:#4fd8ff;"></div>
+          <div class="palette-color" style="background:#ffd84d;"></div>
+        </div>
+      </div>
+      <div class="profile-settings-content profile-settings-section-notifications" style="display:none;">
+        <h2><svg class="animated-icon" width="28" height="28" viewBox="0 0 24 24"><path d="M12 22c1.1 0 2-.9 2-2H10c0 1.1.9 2 2 2zm6-6V11c0-3.07-1.63-5.64-4.5-6.32V4a1.5 1.5 0 0 0-3 0v.68C7.63 5.36 6 7.92 6 11v5l-1.29 1.29A1 1 0 0 0 6 19h12a1 1 0 0 0 .71-1.71L18 17z" fill="none" stroke="var(--accent)" stroke-width="2"><animate attributeName="stroke-width" values="2;3;2" dur="1.6s" repeatCount="indefinite"/></path></svg> Notifications</h2>
+        <p class="profile-settings-desc">Manage notification preferences for messages, mentions, and more.</p>
+        <div class="toggle-row"><span>Message Notifications</span><label class="switch-anim"><input type="checkbox" checked><span class="slider-anim"></span></label></div>
+        <div class="toggle-row"><span>Mention Notifications</span><label class="switch-anim"><input type="checkbox" checked><span class="slider-anim"></span></label></div>
+      </div>
+      <div class="profile-settings-content profile-settings-section-connections" style="display:none;">
+        <h2><svg class="animated-icon" width="28" height="28" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" fill="none" stroke="var(--accent)" stroke-width="2"/></svg> Connections</h2>
+        <p class="profile-settings-desc">Link your other accounts and manage integrations.</p>
+        <div class="skeleton-loader"></div>
+        <div class="skeleton-loader" style="width:80%;"></div>
+      </div>
+      <div class="profile-settings-content profile-settings-section-sessions" style="display:none;">
+        <h2><svg class="animated-icon" width="28" height="28" viewBox="0 0 24 24"><rect x="4" y="8" width="16" height="10" rx="3" fill="none" stroke="var(--accent)" stroke-width="2"/></svg> Sessions</h2>
+        <p class="profile-settings-desc">View and manage your active sessions and devices.</p>
+        <div class="skeleton-loader"></div>
+        <div class="skeleton-loader" style="width:60%;"></div>
+      </div>
+      <div class="profile-settings-content profile-settings-section-placeholder" style="display:none;">
+        <h2>Coming Soon</h2>
+        <p>This section will be available in a future update.</p>
+      </div>
+    </div>
+    <div class="profile-settings-preview">
+      <div class="profile-settings-preview-card">
+        <div class="profile-settings-preview-banner"></div>
+        <div class="profile-settings-preview-avatar"><img src="" alt="Avatar" /></div>
+        <div class="profile-settings-preview-name"></div>
+        <div class="profile-settings-preview-id"></div>
+        <div class="profile-settings-preview-bio"></div>
+        <div class="profile-settings-preview-status"><span class="status-dot online"></span> <span class="status-label">Online</span></div>
+      </div>
+    </div>
+  </div>
+  <div id="create-channel-modal" class="modal" style="display:none;">
+    <div class="modal-content">
+      <button class="modal-close channel-modal-close" title="Close">&times;</button>
+      <h2>Create Channel</h2>
+      <div class="channel-type-row">
+        <label class="channel-type-option">
+          <input type="radio" name="channel-type" value="text" checked />
+          <span class="channel-type-icon">#</span>
+          <span>Text</span>
+          <span class="channel-type-desc">Send messages, images, GIFs, emoji, opinions, and puns</span>
+        </label>
+        <label class="channel-type-option">
+          <input type="radio" name="channel-type" value="voice" />
+          <span class="channel-type-icon"><svg width="18" height="18" viewBox="0 0 20 20" fill="none"><path d="M4 10v2a6 6 0 0 0 12 0v-2" stroke="currentColor" stroke-width="1.5"/><rect x="7" y="2" width="6" height="12" rx="3" stroke="currentColor" stroke-width="1.5"/></svg></span>
+          <span>Voice</span>
+          <span class="channel-type-desc">Hang out together with voice, video, and screen share</span>
+        </label>
+      </div>
+      <label for="channel-name" class="channel-name-label">CHANNEL NAME</label>
+      <input type="text" id="channel-name" class="channel-name-input" placeholder="# new-channel" />
+      <div id="channel-modal-feedback" class="channel-modal-feedback"></div>
+      <div class="private-row">
+        <label class="private-label">
+          <input type="checkbox" id="private-channel-toggle" />
+          <span class="private-icon">🔒</span>
+          Private Channel
+        </label>
+        <span class="private-desc">Only selected members and roles will be able to view this channel.</span>
+      </div>
+      <div class="modal-actions">
+        <button class="modal-back channel-modal-cancel">Cancel</button>
+        <button class="modal-create channel-modal-create" disabled>Create Channel</button>
+      </div>
+    </div>
+  </div>
 </body>
+<script src="app.js"></script>
 </html> 
