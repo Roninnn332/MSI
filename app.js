@@ -129,6 +129,8 @@ document.addEventListener('mousedown', (e) => {
 
 // Server selection logic
 window.selectedServer = null;
+let currentChannelId = null;
+let currentChannelName = null;
 async function renderServerChannels(server) {
   const channelList = document.querySelector('.channel-list');
   if (!channelList) return;
@@ -162,7 +164,16 @@ async function renderServerChannels(server) {
     li.textContent = (channel.type === 'voice' ? '🔊 ' : '# ') + channel.name;
     li.className = 'channel-list-item';
     li.style.cursor = 'pointer';
-    // TODO: Add click handler to select channel, load messages, etc.
+    if (channel.type === 'text') {
+      li.onclick = () => {
+        currentChannelId = channel.id;
+        currentChannelName = channel.name;
+        renderChannelMessages(channel.id, channel.name);
+        document.querySelectorAll('.channel-list-item').forEach(el => el.classList.remove('active'));
+        li.classList.add('active');
+      };
+    }
+    // TODO: Add click handler for voice channels if needed
     channelList.appendChild(li);
   });
 }
@@ -455,6 +466,11 @@ let currentDmFriendId = null;
 let currentDmFriendName = null;
 
 function openDmWithFriend(friendId, friendName) {
+  // Unsubscribe from channel messages if switching to DM
+  if (channelMessageSubscription) {
+    supabase.removeChannel(channelMessageSubscription);
+    channelMessageSubscription = null;
+  }
   const userId = localStorage.getItem('user_id');
   currentDmFriendId = friendId;
   currentDmFriendName = friendName;
@@ -2605,10 +2621,93 @@ document.addEventListener('DOMContentLoaded', function() {
       // If in DM mode, send DM message
       if (currentSidebarView === 'friends' && currentDmFriendId) {
         sendDmMessage(content);
+      } else if (currentChannelId) {
+        sendChannelMessage(content);
       }
-      // TODO: Add logic for server/channel messages if needed
       input.value = '';
     });
+  }
+
+  // ... existing code ...
+  let channelMessageSubscription = null;
+
+  async function renderChannelMessages(channelId, channelName) {
+    const chatHeader = document.querySelector('.chat-header');
+    const channelTitle = document.querySelector('.channel-title');
+    channelTitle.textContent = `# ${channelName}`;
+    chatHeader.style.background = 'var(--background-secondary)';
+    const messagesSection = document.querySelector('.messages');
+    messagesSection.innerHTML = '';
+    // Fetch messages from Supabase
+    const { data: messages, error } = await supabase
+      .from('messages')
+      .select('*')
+      .eq('channel_id', channelId)
+      .order('created_at', { ascending: true });
+    if (error || !messages || messages.length === 0) {
+      messagesSection.innerHTML = `<div style="color:var(--text-secondary);font-size:1.1rem;text-align:center;margin-top:40px;">This is the beginning of #${channelName}.</div>`;
+      return;
+    }
+    messages.forEach(msg => appendChannelMessage(msg));
+    messagesSection.scrollTop = messagesSection.scrollHeight;
+    // Unsubscribe from previous channel subscription
+    if (channelMessageSubscription) {
+      supabase.removeChannel(channelMessageSubscription);
+      channelMessageSubscription = null;
+    }
+    // Subscribe to new messages for this channel
+    channelMessageSubscription = supabase
+      .channel('public:messages')
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages', filter: `channel_id=eq.${channelId}` }, payload => {
+        if (payload.new && payload.new.channel_id === channelId) {
+          appendChannelMessage(payload.new);
+          const messagesSection = document.querySelector('.messages');
+          messagesSection.scrollTop = messagesSection.scrollHeight;
+        }
+      })
+      .subscribe();
+  }
+
+  function appendChannelMessage(msg) {
+    const messagesSection = document.querySelector('.messages');
+    const div = document.createElement('div');
+    div.className = msg.user_id === localStorage.getItem('user_id') ? 'dm-message mine' : 'dm-message';
+    div.innerHTML = `
+      <div class="dm-message-bubble-wrapper" style="display:flex;align-items:flex-end;${msg.user_id === localStorage.getItem('user_id') ? 'justify-content:flex-end;' : ''}">
+        <div class="dm-message-bubble dm-message-animate-in" data-content="${escapeHtml(msg.content)}" data-time="${formatFullTime(msg.created_at)}" title="${formatFullTime(msg.created_at)}">
+          <div class="dm-message-sender" style="font-size:0.92rem;color:var(--accent);font-weight:500;">${msg.display_name || 'User'}</div>
+          <span class="dm-message-content">${escapeHtml(msg.content)}</span>
+          <span class="dm-message-meta">${formatTime(msg.created_at)}</span>
+        </div>
+      </div>
+    `;
+    messagesSection.appendChild(div);
+  }
+  // ... existing code ...
+
+  async function sendChannelMessage(content) {
+    if (!currentChannelId) return;
+    const userId = localStorage.getItem('user_id');
+    const displayName = localStorage.getItem('display_name') || 'User';
+    const { data, error } = await supabase
+      .from('messages')
+      .insert([
+        {
+          channel_id: currentChannelId,
+          user_id: userId,
+          content,
+          display_name: displayName,
+          created_at: new Date().toISOString(),
+        },
+      ])
+      .select();
+    if (!error && data && data.length > 0) {
+      appendChannelMessage(data[0]);
+      const messagesSection = document.querySelector('.messages');
+      messagesSection.scrollTop = messagesSection.scrollHeight;
+    } else {
+      alert('Failed to send message.');
+    }
   }
 });
 
