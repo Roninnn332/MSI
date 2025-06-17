@@ -376,6 +376,7 @@ function renderFriendsChat(friend) {
   const channelTitle = document.querySelector('.channel-title');
   const messagesSection = document.querySelector('.messages');
   const chatInput = document.querySelector('.chat-input');
+  if (friend) hideWelcomeMessage(); // Always hide welcome when a friend is selected
   channelTitle.textContent = friend ? friend.name : 'Friends';
   chatHeader.style.background = 'var(--background-secondary)';
   messagesSection.innerHTML = '';
@@ -390,7 +391,6 @@ function renderFriendsChat(friend) {
     <div style="color:var(--text-secondary);font-size:1.1rem;text-align:center;margin-top:40px;">This is the beginning of your direct message with <b>${friend.name}</b>.</div>
   `;
   chatInput.style.display = '';
-  hideWelcomeMessage();
   // Animate input
   chatInput.classList.remove('chat-input-animate-in');
   void chatInput.offsetWidth; // force reflow
@@ -509,6 +509,7 @@ function renderDmMessages(messages, friendName, friendAvatar, friendStatus) {
     from: msg.from || msg.sender_id,
     to: msg.to || msg.receiver_id,
   }));
+  if (normalizedMessages.length > 0) hideWelcomeMessage(); // Always hide welcome if any messages
   normalizedMessages.forEach((msg, i) => {
     const isMine = msg.from === localStorage.getItem('user_id');
     const showAvatar = !isMine && (lastSender !== msg.from);
@@ -519,9 +520,7 @@ function renderDmMessages(messages, friendName, friendAvatar, friendStatus) {
     lastTime = msg.created_at;
   });
   messagesSection.scrollTop = messagesSection.scrollHeight;
-  if (normalizedMessages.length > 0) {
-    hideWelcomeMessage();
-  } else {
+  if (normalizedMessages.length === 0) {
     showWelcomeMessage();
   }
 }
@@ -2593,6 +2592,24 @@ document.addEventListener('DOMContentLoaded', function() {
       console.error('Failed to create default channels:', err.message);
     }
   };
+
+  // --- Prevent chat form reload and handle message send ---
+  const chatInputForm = document.querySelector('.chat-input');
+  if (chatInputForm) {
+    chatInputForm.addEventListener('submit', function(e) {
+      e.preventDefault();
+      const input = chatInputForm.querySelector('input[type="text"]');
+      if (!input) return;
+      const content = input.value.trim();
+      if (!content) return;
+      // If in DM mode, send DM message
+      if (currentSidebarView === 'friends' && currentDmFriendId) {
+        sendDmMessage(content);
+      }
+      // TODO: Add logic for server/channel messages if needed
+      input.value = '';
+    });
+  }
 });
 
 // Show a temporary feedback message at the top of the server dropdown
