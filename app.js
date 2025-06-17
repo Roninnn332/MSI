@@ -131,16 +131,39 @@ window.selectedServer = null;
 async function renderServerChannels(server) {
   const channelList = document.querySelector('.channel-list');
   if (!channelList) return;
-  // Always clear the channel list and only show placeholder
   channelList.innerHTML = '';
-  // Defensive: remove any friend-list-item classes
   Array.from(channelList.querySelectorAll('.friend-list-item')).forEach(el => el.remove());
-  // Show placeholder for now
-  const li = document.createElement('li');
-  li.textContent = 'No channels yet';
-  li.style.color = 'var(--text-secondary)';
-  li.style.fontStyle = 'italic';
-  channelList.appendChild(li);
+
+  // Debug: Log server id
+  console.log('renderServerChannels: server.id =', server.id, 'server =', server);
+
+  // Fetch channels from Supabase
+  const { data: channels, error } = await supabase
+    .from('channels')
+    .select('*')
+    .eq('server_id', server.id)
+    .order('created_at', { ascending: true });
+
+  // Debug: Log query result
+  console.log('Supabase channels query result:', { channels, error });
+
+  if (error || !channels || channels.length === 0) {
+    const li = document.createElement('li');
+    li.textContent = 'No channels yet';
+    li.style.color = 'var(--text-secondary)';
+    li.style.fontStyle = 'italic';
+    channelList.appendChild(li);
+    return;
+  }
+
+  channels.forEach(channel => {
+    const li = document.createElement('li');
+    li.textContent = (channel.type === 'voice' ? '🔊 ' : '# ') + channel.name;
+    li.className = 'channel-list-item';
+    li.style.cursor = 'pointer';
+    // TODO: Add click handler to select channel, load messages, etc.
+    channelList.appendChild(li);
+  });
 }
 function selectServer(server) {
   currentSidebarView = 'servers'; // Ensure mode is set immediately
@@ -858,11 +881,30 @@ document.addEventListener('DOMContentLoaded', function() {
           console.error('Failed to add creator as server member:', memberError.message);
           alert('Failed to add you as a server member: ' + memberError.message);
         }
-        // --- BULLETPROOF: Create default channels immediately after server creation ---
-        await supabase.from('channels').insert([
+        // --- Create default channels immediately after server creation ---
+        const { error: channelError } = await supabase.from('channels').insert([
           { server_id: newServer.id, name: 'general', type: 'text', is_private: false },
           { server_id: newServer.id, name: 'General', type: 'voice', is_private: false }
         ]);
+        if (channelError) {
+          alert('Failed to create default channels: ' + channelError.message);
+          console.error('Failed to create default channels:', channelError.message);
+        }
+        // --- Insert server creation log ---
+        const { error: logError } = await supabase.from('server_logs').insert([
+          {
+            server_id: newServer.id,
+            user_id: ownerId,
+            action: 'Server created'
+          }
+        ]);
+        if (logError) {
+          console.error('Failed to create server log:', logError.message);
+        }
+        // --- Refresh channel list for the new server ---
+        if (typeof renderServerChannels === 'function') {
+          renderServerChannels(newServer);
+        }
       }
       // Hide modal and all options
       closeModal();
@@ -2585,7 +2627,7 @@ function showInviteCopyFeedback(msg) {
 const profileBanner = document.querySelector('.profile-banner');
 if (profileBanner) {
   profileBanner.addEventListener('load', function() {
-    if (profileBanner.style.display !== 'none' && typeof profileSettingsPreviewBanner !== 'undefined' && profileSettingsPreviewBanner) {
+    if (profileBanner.style.display !== 'none') {
       // Remove any preview video
       const previewVideo = profileSettingsPreviewBanner.querySelector('video');
       if (previewVideo) previewVideo.remove();
@@ -2597,7 +2639,7 @@ if (profileBanner) {
 const profileBannerVideo = document.querySelector('.profile-banner-video');
 if (profileBannerVideo) {
   profileBannerVideo.addEventListener('loadeddata', function() {
-    if (profileBannerVideo.style.display !== 'none' && typeof profileSettingsPreviewBanner !== 'undefined' && profileSettingsPreviewBanner) {
+    if (profileBannerVideo.style.display !== 'none') {
       // Remove any previous video
       let previewVideo = profileSettingsPreviewBanner.querySelector('video');
       if (!previewVideo) {
