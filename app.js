@@ -2,6 +2,7 @@ const SUPABASE_URL = 'https://tmqwjmebyiqqgevsaquh.supabase.co';
 
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRtcXdqbWVieWlxcWdldnNhcXVoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDk3Mzk2OTMsImV4cCI6MjA2NTMxNTY5M30.W_cxVD4is0GFUql8UqAafM8Tx8rSvP_aeLBDLpqjOuo';
 const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+const profileSettingsPreviewBanner = document.querySelector('.profile-settings-preview-banner');
 
 // --- INVITE CODE TOOLTIP LOGIC ---
 // Remove all tooltip logic

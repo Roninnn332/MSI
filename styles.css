@@ -3593,6 +3593,7 @@ body {
   overflow: hidden;
   position: relative;
   border: 2.5px solid var(--accent);
+  margin-left: 22px;
 }
 .profile-settings-preview-banner {
   width: 100%;
