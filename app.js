@@ -4,6 +4,7 @@ const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBh
 const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 const profileSettingsPreviewBanner = document.querySelector('.profile-settings-preview-banner');
 
+
 // --- INVITE CODE TOOLTIP LOGIC ---
 // Remove all tooltip logic
 // (No updateInviteTooltip, attachInviteTooltipCopyHandler, or tooltip event listeners)
@@ -2638,27 +2639,34 @@ document.addEventListener('DOMContentLoaded', function() {
     chatHeader.style.background = 'var(--background-secondary)';
     const messagesSection = document.querySelector('.messages');
     messagesSection.innerHTML = '';
-    // Fetch messages from Supabase
+    
     const { data: messages, error } = await supabase
-      .from('messages')
+      .from('channel_messages')
       .select('*')
       .eq('channel_id', channelId)
       .order('created_at', { ascending: true });
+    
     if (error || !messages || messages.length === 0) {
       messagesSection.innerHTML = `<div style="color:var(--text-secondary);font-size:1.1rem;text-align:center;margin-top:40px;">This is the beginning of #${channelName}.</div>`;
       return;
     }
+    
     messages.forEach(msg => appendChannelMessage(msg));
     messagesSection.scrollTop = messagesSection.scrollHeight;
-    // Unsubscribe from previous channel subscription
+    
     if (channelMessageSubscription) {
       supabase.removeChannel(channelMessageSubscription);
       channelMessageSubscription = null;
     }
-    // Subscribe to new messages for this channel
+    
     channelMessageSubscription = supabase
-      .channel('public:messages')
-      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages', filter: `channel_id=eq.${channelId}` }, payload => {
+      .channel('public:channel_messages')
+      .on('postgres_changes', { 
+        event: 'INSERT', 
+        schema: 'public', 
+        table: 'channel_messages', 
+        filter: `channel_id=eq.${channelId}` 
+      }, payload => {
         if (payload.new && payload.new.channel_id === channelId) {
           appendChannelMessage(payload.new);
           const messagesSection = document.querySelector('.messages');
@@ -2690,7 +2698,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const userId = localStorage.getItem('user_id');
     const displayName = localStorage.getItem('display_name') || 'User';
     const { data, error } = await supabase
-      .from('messages')
+      .from('channel_messages')
       .insert([
         {
           channel_id: currentChannelId,
