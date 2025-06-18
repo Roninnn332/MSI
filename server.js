@@ -65,6 +65,46 @@ io.on('connection', (socket) => {
       created_at: data.created_at
     });
   });
+
+  // --- CHANNEL CHAT LOGIC ---
+  let currentChannelId = null;
+
+  // When user views a channel
+  socket.on('view_channel', (channelId) => {
+    if (currentChannelId) {
+      socket.leave(`channel_${currentChannelId}`);
+    }
+    socket.join(`channel_${channelId}`);
+    currentChannelId = channelId;
+  });
+
+  // When user sends a message to a channel
+  socket.on('send_channel_message', async ({ channelId, userId, content, display_name, file_url, file_type, file_name }) => {
+    const { data, error } = await supabase
+      .from('channel_messages')
+      .insert([{
+        channel_id: channelId,
+        user_id: userId,
+        content,
+        display_name,
+        file_url: file_url || null,
+        file_type: file_type || null,
+        file_name: file_name || null
+      }])
+      .select()
+      .single();
+    if (!error) {
+      io.to(`channel_${channelId}`).emit('receive_channel_message', data);
+    } else {
+      socket.emit('channel_message_error', { error: error.message });
+    }
+  });
+
+  socket.on('disconnect', () => {
+    if (currentChannelId) {
+      socket.leave(`channel_${currentChannelId}`);
+    }
+  });
 });
 
 // Helper to get consistent DM room name

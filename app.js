@@ -40,6 +40,73 @@ async function updateUserProfile(userId, profile) {
   return data;
 }
 
+let channelMessageSubscription = null;
+
+async function renderChannelMessages(channelId, channelName) {
+    const chatHeader = document.querySelector('.chat-header');
+    const channelTitle = document.querySelector('.channel-title');
+    channelTitle.textContent = `# ${channelName}`;
+    chatHeader.style.background = 'var(--background-secondary)';
+    const messagesSection = document.querySelector('.messages');
+    messagesSection.innerHTML = '';
+    // Fetch messages from Supabase (use channel_messages table)
+    const { data: messages, error } = await supabase
+      .from('channel_messages')
+      .select('*')
+      .eq('channel_id', channelId)
+      .order('created_at', { ascending: true });
+    if (error || !messages || messages.length === 0) {
+      messagesSection.innerHTML = `<div style="color:var(--text-secondary);font-size:1.1rem;text-align:center;margin-top:40px;">This is the beginning of #${channelName}.</div>`;
+      return;
+    }
+    messages.forEach(msg => appendChannelMessage(msg));
+    messagesSection.scrollTop = messagesSection.scrollHeight;
+    // Unsubscribe from previous channel subscription
+    if (channelMessageSubscription) {
+      supabase.removeChannel(channelMessageSubscription);
+      channelMessageSubscription = null;
+    }
+    // Subscribe to new messages for this channel (use channel_messages table)
+    channelMessageSubscription = supabase
+      .channel('public:channel_messages')
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'channel_messages', filter: `channel_id=eq.${channelId}` }, payload => {
+        if (payload.new && payload.new.channel_id === channelId) {
+          appendChannelMessage(payload.new);
+          const messagesSection = document.querySelector('.messages');
+          messagesSection.scrollTop = messagesSection.scrollHeight;
+        }
+      })
+      .subscribe();
+}
+
+function appendChannelMessage(msg) {
+    const messagesSection = document.querySelector('.messages');
+    const div = document.createElement('div');
+    div.className = msg.user_id === localStorage.getItem('user_id') ? 'dm-message mine' : 'dm-message';
+    div.innerHTML = `
+      <div class="dm-message-bubble-wrapper" style="display:flex;align-items:flex-end;${msg.user_id === localStorage.getItem('user_id') ? 'justify-content:flex-end;' : ''}">
+        <div class="dm-message-bubble dm-message-animate-in" data-content="${escapeHtml(msg.content)}" data-time="${formatFullTime(msg.created_at)}" title="${formatFullTime(msg.created_at)}">
+          <div class="dm-message-sender" style="font-size:0.92rem;color:var(--accent);font-weight:500;">${msg.display_name || 'User'}</div>
+          <span class="dm-message-content">${escapeHtml(msg.content)}</span>
+          <span class="dm-message-meta">${formatTime(msg.created_at)}</span>
+        </div>
+      </div>
+    `;
+    messagesSection.appendChild(div);
+}
+
+async function sendChannelMessage(content) {
+    if (!currentChannelId) return;
+    const userId = localStorage.getItem('user_id');
+    const displayName = localStorage.getItem('display_name') || 'User';
+    socket.emit('send_channel_message', {
+      channelId: currentChannelId,
+      userId,
+      content,
+      display_name: displayName
+    });
+}
+
 // Fetch servers list from Supabase and update sidebar
 async function fetchServers() {
   const serverList = document.querySelector('.server-list');
@@ -138,18 +205,12 @@ async function renderServerChannels(server) {
   channelList.innerHTML = '';
   Array.from(channelList.querySelectorAll('.friend-list-item')).forEach(el => el.remove());
 
-  // Debug: Log server id
-  console.log('renderServerChannels: server.id =', server.id, 'server =', server);
-
   // Fetch channels from Supabase
   const { data: channels, error } = await supabase
     .from('channels')
     .select('*')
     .eq('server_id', server.id)
     .order('created_at', { ascending: true });
-
-  // Debug: Log query result
-  console.log('Supabase channels query result:', { channels, error });
 
   if (error || !channels || channels.length === 0) {
     const li = document.createElement('li');
@@ -167,17 +228,29 @@ async function renderServerChannels(server) {
     li.style.cursor = 'pointer';
     if (channel.type === 'text') {
       li.onclick = () => {
-        currentChannelId = channel.id;
-        currentChannelName = channel.name;
-        renderChannelMessages(channel.id, channel.name);
+        onChannelClick(channel.id, channel.name);
         document.querySelectorAll('.channel-list-item').forEach(el => el.classList.remove('active'));
         li.classList.add('active');
+        // Show chat input for text channels
+        const chatInput = document.querySelector('.chat-input');
+        if (chatInput) chatInput.style.display = '';
+      };
+    } else if (channel.type === 'voice') {
+      li.onclick = () => {
+        currentChannelId = channel.id;
+        currentChannelName = channel.name;
+        renderVoiceChannelUI(channel.id, channel.name);
+        document.querySelectorAll('.channel-list-item').forEach(el => el.classList.remove('active'));
+        li.classList.add('active');
+        // Hide chat input for voice channels
+        const chatInput = document.querySelector('.chat-input');
+        if (chatInput) chatInput.style.display = 'none';
       };
     }
-    // TODO: Add click handler for voice channels if needed
     channelList.appendChild(li);
   });
 }
+
 function selectServer(server) {
   currentSidebarView = 'servers'; // Ensure mode is set immediately
   window.selectedServer = server;
@@ -2639,34 +2712,27 @@ document.addEventListener('DOMContentLoaded', function() {
     chatHeader.style.background = 'var(--background-secondary)';
     const messagesSection = document.querySelector('.messages');
     messagesSection.innerHTML = '';
-    
+    // Fetch messages from Supabase (use channel_messages table)
     const { data: messages, error } = await supabase
       .from('channel_messages')
       .select('*')
       .eq('channel_id', channelId)
       .order('created_at', { ascending: true });
-    
     if (error || !messages || messages.length === 0) {
       messagesSection.innerHTML = `<div style="color:var(--text-secondary);font-size:1.1rem;text-align:center;margin-top:40px;">This is the beginning of #${channelName}.</div>`;
       return;
     }
-    
     messages.forEach(msg => appendChannelMessage(msg));
     messagesSection.scrollTop = messagesSection.scrollHeight;
-    
+    // Unsubscribe from previous channel subscription
     if (channelMessageSubscription) {
       supabase.removeChannel(channelMessageSubscription);
       channelMessageSubscription = null;
     }
-    
+    // Subscribe to new messages for this channel (use channel_messages table)
     channelMessageSubscription = supabase
       .channel('public:channel_messages')
-      .on('postgres_changes', { 
-        event: 'INSERT', 
-        schema: 'public', 
-        table: 'channel_messages', 
-        filter: `channel_id=eq.${channelId}` 
-      }, payload => {
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'channel_messages', filter: `channel_id=eq.${channelId}` }, payload => {
         if (payload.new && payload.new.channel_id === channelId) {
           appendChannelMessage(payload.new);
           const messagesSection = document.querySelector('.messages');
@@ -2674,7 +2740,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
       })
       .subscribe();
-  }
+}
 
   function appendChannelMessage(msg) {
     const messagesSection = document.querySelector('.messages');
@@ -2697,25 +2763,82 @@ document.addEventListener('DOMContentLoaded', function() {
     if (!currentChannelId) return;
     const userId = localStorage.getItem('user_id');
     const displayName = localStorage.getItem('display_name') || 'User';
-    const { data, error } = await supabase
-      .from('channel_messages')
-      .insert([
-        {
-          channel_id: currentChannelId,
-          user_id: userId,
-          content,
-          display_name: displayName,
-          created_at: new Date().toISOString(),
-        },
-      ])
-      .select();
-    if (!error && data && data.length > 0) {
-      appendChannelMessage(data[0]);
+    socket.emit('send_channel_message', {
+      channelId: currentChannelId,
+      userId,
+      content,
+      display_name: displayName
+    });
+  }
+
+  // Listen for new channel messages via Socket.IO
+  socket.on('receive_channel_message', (msg) => {
+    if (msg.channel_id === currentChannelId) {
+      appendChannelMessage(msg);
       const messagesSection = document.querySelector('.messages');
       messagesSection.scrollTop = messagesSection.scrollHeight;
-    } else {
-      alert('Failed to send message.');
     }
+  });
+
+  // When user clicks a channel
+  async function onChannelClick(channelId, channelName) {
+    currentChannelId = channelId;
+    currentChannelName = channelName;
+    socket.emit('view_channel', channelId);
+    await renderChannelMessages(channelId, channelName);
+  }
+
+  // Update renderServerChannels to use onChannelClick
+  async function renderServerChannels(server) {
+    const channelList = document.querySelector('.channel-list');
+    if (!channelList) return;
+    channelList.innerHTML = '';
+    Array.from(channelList.querySelectorAll('.friend-list-item')).forEach(el => el.remove());
+
+    // Fetch channels from Supabase
+    const { data: channels, error } = await supabase
+      .from('channels')
+      .select('*')
+      .eq('server_id', server.id)
+      .order('created_at', { ascending: true });
+
+    if (error || !channels || channels.length === 0) {
+      const li = document.createElement('li');
+      li.textContent = 'No channels yet';
+      li.style.color = 'var(--text-secondary)';
+      li.style.fontStyle = 'italic';
+      channelList.appendChild(li);
+      return;
+    }
+
+    channels.forEach(channel => {
+      const li = document.createElement('li');
+      li.textContent = (channel.type === 'voice' ? '🔊 ' : '# ') + channel.name;
+      li.className = 'channel-list-item';
+      li.style.cursor = 'pointer';
+      if (channel.type === 'text') {
+        li.onclick = () => {
+          onChannelClick(channel.id, channel.name);
+          document.querySelectorAll('.channel-list-item').forEach(el => el.classList.remove('active'));
+          li.classList.add('active');
+          // Show chat input for text channels
+          const chatInput = document.querySelector('.chat-input');
+          if (chatInput) chatInput.style.display = '';
+        };
+      } else if (channel.type === 'voice') {
+        li.onclick = () => {
+          currentChannelId = channel.id;
+          currentChannelName = channel.name;
+          renderVoiceChannelUI(channel.id, channel.name);
+          document.querySelectorAll('.channel-list-item').forEach(el => el.classList.remove('active'));
+          li.classList.add('active');
+          // Hide chat input for voice channels
+          const chatInput = document.querySelector('.chat-input');
+          if (chatInput) chatInput.style.display = 'none';
+        };
+      }
+      channelList.appendChild(li);
+    });
   }
 });
 
@@ -2785,4 +2908,14 @@ if (profileBannerVideo) {
       profileSettingsPreviewBanner.style.background = '';
     }
   });
+}
+
+// Add this function after renderChannelMessages
+function renderVoiceChannelUI(channelId, channelName) {
+  const chatHeader = document.querySelector('.chat-header');
+  const channelTitle = document.querySelector('.channel-title');
+  channelTitle.textContent = `🔊 ${channelName}`;
+  chatHeader.style.background = 'var(--background-secondary)';
+  const messagesSection = document.querySelector('.messages');
+  messagesSection.innerHTML = `<div style="color:var(--accent);font-size:1.2rem;text-align:center;margin-top:40px;">You are in voice channel: <b>${channelName}</b><br><span style='font-size:1.1rem;color:var(--text-secondary);'>Voice chat UI coming soon!</span></div>`;
 }
