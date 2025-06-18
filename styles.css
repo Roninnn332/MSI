@@ -1982,7 +1982,6 @@ body {
   stroke: currentColor;
   fill: none;
   display: block;
-  color: var(--accent); /* Ensure icon is visible */
 }
 .chat-attach-btn:hover, .chat-attach-btn:focus {
   background: var(--accent);
